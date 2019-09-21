@@ -19,51 +19,93 @@
         let track = entries[i].getAttribute('data-trackid');
         if (track !== '') {
             trackCollection.push(track);
-            console.log(track);
+            // console.log(track);
         } 
       }
       return trackCollection;
     }
 
-    // determine which list was clicked & switch playlists as needed
+    // determine which list/track was clicked & switch playlists as needed
     function bindPlayButtons() {
       let playButtons = document.getElementsByClassName('play-button');
       for (let i = 0; i < playButtons.length; i++) {
         playButtons[i].closest('.track_play_auxiliary').addEventListener('click', playButtonHandler);
       } 
+      setTrackNumbers();
     }
 
     function playButtonHandler(e) {
       let isFeed = e.target.closest('.story-innards') !== null,
           trackId = e.target.closest('.track_play_auxiliary').getAttribute('data-trackid'),
+          trackNum = e.target.closest('.track_play_auxiliary').getAttribute('data-tracknum'),
           listTarget = isFeed ? 'feed' : 'release';
       
       switchLists(listTarget);
       let playlistLength = bcplayer._playlist.length();
 
-      console.log(`about to play ${trackId}, #${bcplayer._playlist._track} in playlist`);
+      console.log(`about to play ${trackId}, #${trackNum} in playlist`);
 
-      for (let t = 0; t < playlistLength; t++) {
-        if (bcplayer._playlist._playlist[t].id.toString() === trackId) {
-          // check if user is pausing a track, unpausing, or playing a new one
-          if (bcplayer.currently_playing_track() !== null && 
-              bcplayer._playing_state === 'PLAYING' &&
-              bcplayer.currently_playing_track().id.toString() === trackId) {
-            pausedTrack = trackId;
-            console.log('pausing');
-            newFeedPlaylist.playpause();
-          } else {
-            console.log('found track, playing now');
-            if (pausedTrack === trackId) {
-              console.log("unpausing");
-              newFeedPlaylist.playpause();
-              pausedTrack = '';
-            } else {                  
-              bcplayer._playlist.play_track(bcplayer._playlist._playlist[t].tracknum);
-            }
-          }
+      // check if user is pausing a track, unpausing, or playing a new one
+      if (bcplayer.currently_playing_track() !== null && 
+          bcplayer._playing_state === 'PLAYING' &&
+          bcplayer.currently_playing_track().id.toString() === trackId) {
+        pausedTrack = trackId;
+        console.log('pausing');
+        newFeedPlaylist.playpause();
+      } else {
+        console.log('found track, playing now');
+        if (pausedTrack === trackId) {
+          console.log("unpausing");
+          newFeedPlaylist.playpause();
+          pausedTrack = '';
+        } else {                  
+          bcplayer._playlist.play_track(trackNum);
         }
       }
+    }
+
+    // need track numbers on the elements to ensure proper track gets played
+    function setTrackNumbers() {
+      let feedTracks = document.querySelectorAll('.story-innards .track_play_auxiliary');
+      let releaseTracks = document.querySelectorAll('#new-releases-vm .track_play_auxiliary');
+      for (let i = 0; i < feedTracks.length; i++) {
+        feedTracks[i].setAttribute('data-tracknum', i);
+      }
+      for (let j = 0; j < releaseTracks.length; j++) {
+        releaseTracks[j].setAttribute('data-tracknum', j);
+      }
+      verifyInPlaylist(feedTracks);
+    }
+
+    // because bandcamp doesn't add scroll-added tracks to the playlist
+    // if they already appear in the release playlist
+    function verifyInPlaylist(feedTracks) {
+      if (currentList === 'release') {
+        // need to copy over any scroll-added tracks first
+        copyScrollAddedTracks();
+      }
+      for (let i = 0; i < feedTracks.length; i++) {
+        let trackId = feedTracks[i].getAttribute('data-trackid'),
+            playlist = currentList === 'feed' ? playerview._playlist._playlist : feedPlaylist,
+            trackFound = findInPlaylist(playlist, trackId);
+
+        if (trackFound !== 0 && !trackFound) {
+          console.log(`${trackId} not found in feed list, should be tracknum ${i}`);
+          let releaseIndex = findInPlaylist(releasePlaylist, trackId),
+              trackObject = releasePlaylist[releaseIndex];
+          spliceIntoList(playlist, i, trackObject);
+        }
+      }      
+    }
+
+    function findInPlaylist(list, track) {
+      for (let i = 0; i < list.length; i++) {
+        if (list[i].id.toString() === track) {
+          // beware this returns zero
+          return i;
+        }
+      }
+      return false;
     }
 
     function switchLists(list) {
@@ -71,27 +113,75 @@
         return;
       } else if (list === 'release') {
         // save the current feed playlist (it's possible new tracks were added by scrolling)
-        currentList = 'release';
         feedPlaylist = bcplayer._playlist._playlist;
-        // .load calls .unload, which kills the whole playlist        
+        // .load calls .unload, which kills the whole playlist before adding anything      
         bcplayer._playlist.load(releasePlaylist);
         // note: if release playlist ends, any scroll-added tracks will play automatically
         // (they are appended dynamically to the list)
+        currentList = 'release';
       } else {
-        // check for scroll-added tracks
-        console.log(`release playlist length start: ${releasePlaylistLength} & end: ${bcplayer._playlist.length()}`);
-        if (bcplayer._playlist.length() > releasePlaylistLength) {
-          console.log(`${bcplayer._playlist.length() - releasePlaylistLength} tracks added by scrolling`);
-          for (let i = releasePlaylistLength; i < bcplayer._playlist.length(); i++) {
-            feedPlaylist.push(bcplayer._playlist._playlist[i]);
-          }
-        }        
-        currentList = 'feed';
+        copyScrollAddedTracks();
         bcplayer._playlist.load(feedPlaylist);
-        console.log(bcplayer._playlist._playlist);
+        currentList = 'feed';
       }
-      console.log(`switched list to ${list}`);
-      bcplayer._handle_playlistchange();
+      console.log(`switched list to ${list}`, bcplayer._playlist._playlist);
+    }
+
+    function copyScrollAddedTracks() {
+      console.log(`release playlist length start: ${releasePlaylistLength} & end: ${bcplayer._playlist.length()}`);
+      if (bcplayer._playlist.length() > releasePlaylistLength) {
+        console.log(`${bcplayer._playlist.length() - releasePlaylistLength} tracks added by scrolling`);
+        for (let i = releasePlaylistLength; i < bcplayer._playlist.length(); i++) {
+          feedPlaylist.push(bcplayer._playlist._playlist[i]);
+        }
+      } 
+      // check if tracks appear multiple times after scroll-adding
+      // bandcamp won't add them to playlist for some reason
+      // it wrecks the order & functionality of buttons in addition to not being true to the feed
+      checkDuplicates();
+    }
+
+    function checkDuplicates() {
+      let feedTracks = getTrackIds('feed');
+      let alreadyCopied = [];
+      for (let i = 0; i < feedTracks.length; i++) {
+        let instances = countInArray(feedTracks, feedTracks[i]);
+        if (instances > 1 && alreadyCopied.indexOf(feedTracks[i]) == -1) {
+          // find the indexes of the duplicates
+          console.log('first instance of dupe at index',i);
+          let dupes = [];
+          for (let d = i + 1; d < feedTracks.length; d++) {
+            if (feedTracks[d] === feedTracks[i]) {
+              console.log('found dupe at index', d);
+              dupes.push(d);
+            }
+          }
+          // splice copies of the tracks into the playlist
+          console.log(`making ${instances - 1} copies of ${feedTracks[i]}`);
+          for (let s = 0; s < dupes.length; s++) {
+            if (currentList === 'release') {
+              spliceIntoList(feedPlaylist, dupes[s], feedPlaylist[i]);
+            } else {
+              spliceIntoList(bcplayer._playlist._playlist, dupes[s], bcplayer._playlist._playlist[i]);    
+            }
+          }
+          alreadyCopied.push(feedTracks[i]);
+        }
+      }
+    }
+
+    function spliceIntoList(list, index, track) {
+      // copy needs to be made into a TrackInfo object
+      let copy = { ...track },
+          trackinfo = new Player.TrackInfo(copy);
+      list.splice(index, 0, trackinfo);
+      list[index].tracknum = index;
+      console.log('spliced track', list[index]);
+      // now have to adjust the tracknums on all the following tracks
+      for (let i = index + 1; i < list.length; i++) {
+        list[i].tracknum++;
+      }  
+      console.log('new playlist:', list); 
     }
 
     function FeedPlaylist() {
@@ -108,15 +198,12 @@
             feedDuplicates = {};
 
         // going to replace default playlist with filtered playlist
-        bcplayer._playlist._playlist = [];
+        bcplayer._playlist.unload();
 
-        function countInArray(array, value) {
-          return array.reduce((n, x) => n + (x === value), 0);
-        }
-
-        // sort all tracks into appropriate playlists
+        // sort all tracks into appropriate playlists because
         // if track shows up in both feed and new release, it messes up the order of the original playlist
-        // so we need to create separate playlists
+        // by default, after 7 or 8 tracks it jumps to new releases 
+        // since they did not intend this to play through automatically
         for (let i = 0; i < originalPlaylist.length; i++) {
           let origId = originalPlaylist[i].id.toString();
           if (feedTracks.indexOf(origId) != -1) {
@@ -136,11 +223,6 @@
             // if this occurs they will show up twice in the feed playlist too
             // we only want it once in each list. Only add it to feed if not already added
             // BUT if it actually shows up because multiple people bought it, we want it there again
-            // If a dupe gets loaded via scrolling, it is not added for some reason
-            // But that's bandcamp doing that...
-            // Clicking on the 2nd occurrence puts the playlist location back to the 1st occurrence
-            // then clicking on other tracks does nothing
-            // TODO: FIX THAT
             if (addedToFeed.indexOf(originalPlaylist[i].id) == -1 || (dupes && timesAdded < timesInArray)) {
               bcplayer._playlist._playlist.push(originalPlaylist[i]);
               addedToFeed.push(originalPlaylist[i].id);
@@ -156,24 +238,28 @@
             releasePlaylist.push(originalPlaylist[i]);
           }
         }
-        // 10 loaded by default, but could change on whims of bandcamp
+        // 10 feed stories loaded by default, but could change on whims of bandcamp
         // reference this to determine when tracks are added by scrolling
         feedPlaylistLength = bcplayer._playlist.length();
         // reference this in case any tracks added via scrolling while release list is playing
         releasePlaylistLength = releasePlaylist.length;
         
-        bindPlayButtons();        
         // this needs to be done every time new tracks are loaded at bottom 
         // or won't be able to click on newly added tracks (they'd still work via the player prev/next buttons)
+        bindPlayButtons();        
         let storyList = document.getElementById('story-list'),
             options = {
               childList: true
             },
             observer = new MutationObserver((mutations) => {
-              let numStories = document.querySelectorAll('.story-innards').length;
-              if (numStories > feedPlaylistLength) {
-                console.log(`there are now ${numStories} items in feed`);
+              // not all stories are playable tracks
+              let numTracks = document.querySelectorAll('.story-innards .track_play_auxiliary').length;
+              if (numTracks > feedPlaylistLength) {
+                console.log(`there are now ${numTracks} playable tracks in feed`);
                 bindPlayButtons();
+                if (currentList === 'feed') {
+                  checkDuplicates();
+                }
               }
             });
         observer.observe(storyList, options);
@@ -221,7 +307,6 @@
             })
         })
     }
-
 
     // Methods
     FeedPlaylist.prototype.playpause = function(e) {
@@ -295,6 +380,11 @@
         });
 
         return this.$trackPlayWaypoint.parentElement.appendChild(container);
+    }
+
+    // Utilities
+    function countInArray(array, value) {
+      return array.reduce((n, x) => n + (x === value), 0);
     }
 
     console.debug('[bandcampFeedPlaylist] loaded');
