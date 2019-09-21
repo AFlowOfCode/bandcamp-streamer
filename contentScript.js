@@ -3,13 +3,15 @@
     const bcplayer = window.playerview;
 
     let feedPlaylist = [],
+        feedPlaylistLength,
         releasePlaylist = [],
+        releasePlaylistLength,
         currentList = 'feed',
         pausedTrack;
 
     // get track ids for feed or releases playlists
     function getTrackIds(list) {
-      // console.log(`getting track ids for ${list} list`);
+      console.log(`getting track ids for ${list} list`);
       let listSelector = list === 'feed' ? '#story-list .track_play_hilite' : '#new-releases-vm .collection-grid > li',
           entries = document.querySelectorAll(listSelector),
           trackCollection = [];
@@ -25,69 +27,65 @@
 
     // determine which list was clicked & switch playlists as needed
     function bindPlayButtons() {
-
-      let playButtons = document.getElementsByClassName('play-button'),
-          listTarget;
-
+      let playButtons = document.getElementsByClassName('play-button');
       for (let i = 0; i < playButtons.length; i++) {
-        playButtons[i].closest('.track_play_auxiliary').addEventListener('click', function(e){
-          let isFeed = e.target.closest('.story-innards') !== null,
-              trackId = e.target.closest('.track_play_auxiliary').getAttribute('data-trackid');
-          console.log(`about to play ${trackId}`);
+        playButtons[i].closest('.track_play_auxiliary').addEventListener('click', playButtonHandler);
+      } 
+    }
 
+    function playButtonHandler(e) {
+      let isFeed = e.target.closest('.story-innards') !== null,
+          trackId = e.target.closest('.track_play_auxiliary').getAttribute('data-trackid'),
           listTarget = isFeed ? 'feed' : 'release';
-          switchLists(listTarget);
+      
+      switchLists(listTarget);
+      let playlistLength = bcplayer._playlist.length();
 
-          let playlistLength = bcplayer._playlist._playlist.length,
-              foundTrack = false;
-          for (let t = 0; t < playlistLength; t++) {
-            if (bcplayer._playlist._playlist[t].id.toString() === trackId) {
-              // check if user is pausing a track, unpausing a track, or playing a new one
-              if (playerview.currently_playing_track() !== null && playerview.currently_playing_track().id.toString() === trackId) {
-                pausedTrack = trackId;
-                console.log('playpause', bcplayer._playing_state);
-                FeedPlaylist.playpause();
-              } else {
-                console.log('found track, playing now');
-                if (pausedTrack === trackId) {
-                  console.log("unpausing");
-                  FeedPlaylist.playpause();
-                  pausedTrack = '';
-                } else {                  
-                  bcplayer._playlist.play_track(bcplayer._playlist._playlist[t].tracknum);
-                }
-                foundTrack = true;
-                console.log('current state:', bcplayer._playing_state);
-              }
+      console.log(`about to play ${trackId}, #${bcplayer._playlist._track} in playlist`);
+
+      for (let t = 0; t < playlistLength; t++) {
+        if (bcplayer._playlist._playlist[t].id.toString() === trackId) {
+          // check if user is pausing a track, unpausing, or playing a new one
+          if (bcplayer.currently_playing_track() !== null && 
+              bcplayer._playing_state === 'PLAYING' &&
+              bcplayer.currently_playing_track().id.toString() === trackId) {
+            pausedTrack = trackId;
+            console.log('pausing');
+            newFeedPlaylist.playpause();
+          } else {
+            console.log('found track, playing now');
+            if (pausedTrack === trackId) {
+              console.log("unpausing");
+              newFeedPlaylist.playpause();
+              pausedTrack = '';
+            } else {                  
+              bcplayer._playlist.play_track(bcplayer._playlist._playlist[t].tracknum);
             }
           }
-          if (!foundTrack) {
-            console.log("couldn't find track in playlist!");
-          }
-          console.log("playlist track #",bcplayer._playlist._track);
-        });
-      } 
+        }
+      }
     }
 
     function switchLists(list) {
       if (list === currentList) {
-        console.log("no need to switch list");
-        // console.log(bcplayer._playlist._playlist);
         return;
       } else if (list === 'release') {
         // save the current feed playlist (it's possible new tracks were added by scrolling)
         currentList = 'release';
         feedPlaylist = bcplayer._playlist._playlist;
-        // console.log('releasePlaylist',releasePlaylist);
-
         // .load calls .unload, which kills the whole playlist        
         bcplayer._playlist.load(releasePlaylist);
-        // console.log(bcplayer._playlist._playlist);
+        // note: if release playlist ends, any scroll-added tracks will play automatically
+        // (they are appended dynamically to the list)
       } else {
-        // TODO: get any tracks that were added by scrolling while release playlist was active
-        // should be able to just grab end of release list if it is > starting length
-        // currently these added tracks will play automatically if the new releases playlist ends
-        // (since they are appended dynamically to the list)
+        // check for scroll-added tracks
+        console.log(`release playlist length start: ${releasePlaylistLength} & end: ${bcplayer._playlist.length()}`);
+        if (bcplayer._playlist.length() > releasePlaylistLength) {
+          console.log(`${bcplayer._playlist.length() - releasePlaylistLength} tracks added by scrolling`);
+          for (let i = releasePlaylistLength; i < bcplayer._playlist.length(); i++) {
+            feedPlaylist.push(bcplayer._playlist._playlist[i]);
+          }
+        }        
         currentList = 'feed';
         bcplayer._playlist.load(feedPlaylist);
         console.log(bcplayer._playlist._playlist);
@@ -134,7 +132,7 @@
               }
               dupes = true;
             }
-            // tracks can occur in both feed and new release
+            // tracks can appear in both feed and new release
             // if this occurs they will show up twice in the feed playlist too
             // we only want it once in each list. Only add it to feed if not already added
             // BUT if it actually shows up because multiple people bought it, we want it there again
@@ -142,8 +140,8 @@
             // But that's bandcamp doing that...
             // Clicking on the 2nd occurrence puts the playlist location back to the 1st occurrence
             // then clicking on other tracks does nothing
+            // TODO: FIX THAT
             if (addedToFeed.indexOf(originalPlaylist[i].id) == -1 || (dupes && timesAdded < timesInArray)) {
-              console.log(`adding ${origId} to feed playlist`);
               bcplayer._playlist._playlist.push(originalPlaylist[i]);
               addedToFeed.push(originalPlaylist[i].id);
               if (dupes) {
@@ -158,9 +156,27 @@
             releasePlaylist.push(originalPlaylist[i]);
           }
         }
+        // 10 loaded by default, but could change on whims of bandcamp
+        // reference this to determine when tracks are added by scrolling
+        feedPlaylistLength = bcplayer._playlist.length();
+        // reference this in case any tracks added via scrolling while release list is playing
+        releasePlaylistLength = releasePlaylist.length;
         
-        // TODO: this needs to be done every time new tracks are loaded at bottom
         bindPlayButtons();        
+        // this needs to be done every time new tracks are loaded at bottom 
+        // or won't be able to click on newly added tracks (they'd still work via the player prev/next buttons)
+        let storyList = document.getElementById('story-list'),
+            options = {
+              childList: true
+            },
+            observer = new MutationObserver((mutations) => {
+              let numStories = document.querySelectorAll('.story-innards').length;
+              if (numStories > feedPlaylistLength) {
+                console.log(`there are now ${numStories} items in feed`);
+                bindPlayButtons();
+              }
+            });
+        observer.observe(storyList, options);
 
         // Observable
         this.playlist = bcplayer._playlist;
