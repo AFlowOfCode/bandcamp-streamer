@@ -5,7 +5,7 @@
         jQuery = window.jQuery;
 
   if (!bcplayer) {
-    console.error('not on feed page');
+    // console.log('not on feed page');
     // do wishlist next
     loadCollection();
     // return null;
@@ -17,39 +17,118 @@
   function loadCollection() {
     // need to modify some of the player's functions
     replaceFunctions();
-    let items = document.querySelectorAll('#collection-items .track_play_hilite'),
+    let isOwner = document.getElementById('fan-banner').classList.contains('owner'),
+        items = document.querySelectorAll('#collection-items .track_play_hilite'),
         collectionPlaylist = [],
-        queueTitles = [];
+        albumPlaylist = [],
+        queueTitles = [],
+        albumQueueTitles = [];
+
     for (let i = 0; i < items.length; i++) {
-      let type = items[i].getAttribute('data-itemtype').slice(0, 1),
-          id = items[i].getAttribute('data-itemid'),
-          key = type + id;
-      console.log(key, typeof key);
-      let track = colplayer.tracklists.collection[key][0];
-      if (track) {
+      
+      let id = items[i].getAttribute('data-itemid'),
+          domId = items[i].id,
+          // this contains the sequential keys of every item available
+          key = window.CollectionData.sequence[i],
+          track;
+
+      // check for a favorite track
+      if (isOwner) {
+        let node = document.querySelector(`#${domId} .fav-track-link`);
+        if (node) {
+          console.log('found fave track');
+          track = colplayer.tracklists.collection[key][+node.href.slice(node.href.indexOf('?t=') + 3) - 1];
+        } else {
+          track = colplayer.tracklists.collection[key][0];
+        } 
+      } else {
+        track = colplayer.tracklists.collection[key][0];
+      }
+
+      // build collection playlist
+      if (track) {        
         console.log(`pushing ${track.trackData.artist} - ${track.trackData.title}`);
         track.itemId = id;
+        track.domId = domId;
         collectionPlaylist.push(track);
         queueTitles.push(`${track.trackData.artist} - ${track.trackData.title}`);
         items[i].setAttribute('data-tracknum', i);
       }
+      // build album playlist 
+      if (isOwner) {
+        let album = colplayer.tracklists.collection[key];
+        items[i].setAttribute('data-firsttrack', albumPlaylist.length);
+        if (album.length >= 1) {
+          album.forEach(function(t,index){
+            t.itemId = id;
+            albumPlaylist.push(t);
+            albumQueueTitles.push(`${t.trackData.artist} - ${t.trackData.title}`);
+          });
+        }
+        console.log(`pushed album ${album[0].title} by ${album[0].trackData.artist}, playlist length now ${albumPlaylist.length}`);
+      }
     }
-    // colplayer.player2._playlist.load(collectionPlaylist);
-    colplayer.player2.setTracklist(collectionPlaylist);
-    // colplayer.player2.setCurrentTrack(0);
-    // console.log('just init setTrackList & .load', colplayer.player2._playlist._playlist);
+    if (isOwner) {
+      colplayer.player2.setTracklist(albumPlaylist);
+      colplayer.currentPlaylist = 'albums';
+      // these have to be available for playlistSwitcher
+      colplayer.collectionPlaylist = collectionPlaylist;
+      colplayer.albumPlaylist = albumPlaylist;
+      colplayer.queueTitles = queueTitles;
+      colplayer.albumQueueTitles = albumQueueTitles;
+      playlistSwitcher(true); 
+      fixQueueTitles(albumQueueTitles);
+    } else {
+      colplayer.currentPlaylist = 'favorites';
+      colplayer.player2.setTracklist(collectionPlaylist);      
+      fixQueueTitles(queueTitles);
+    }
     colplayer.currentItemEl(jQuery(items[0]));
-    // use this for toggling off, might have to be done in next/prev 
-    // colplayer.lastEl = items[0];
-    // this gets the transport to show up
+    // this gets the transport to show up on page load
     colplayer.player2._playlist.play(); 
     colplayer.player2._playlist.playpause(); 
     
     colplayer.transPlay = document.querySelector('#collection-player .playpause .play');
     colplayer.transPause = document.querySelector('#collection-player .playpause .pause');
-
+    
     replaceClickHandlers();
-    fixQueueTitles(queueTitles);
+  }
+
+  function playlistSwitcher(init) {
+    // make sure list starts unshuffled
+    if (colplayer.isShuffled) colplayer.shuffle(); 
+    let queueHeader = document.querySelector('.queue-header h2');
+    if (init) {
+      let switcher = document.createElement('a'),
+          parent = document.querySelector('#collection-player .controls-extra'),
+          header = '<span id="playlist-header" style="font-weight:600;">albums</span>',
+          shuffle = '<span id="shuffler" style="margin-left:10px; font-size:0.7em; cursor: pointer;">(shuffle!)</span>';
+      switcher.href = '#';
+      switcher.setAttribute('onclick','return false;');
+      switcher.id = 'playlist-switcher';
+      switcher.style.marginRight = '10px';
+      switcher.innerText = 'Switch to favorite tracks';
+      parent.prepend(switcher);
+      switcher.addEventListener('click', () => playlistSwitcher());
+      queueHeader.innerHTML = `now playing ${header} ${shuffle}`;
+      document.getElementById('shuffler').addEventListener('click', () => colplayer.shuffle());
+    } else {
+      let switcher = document.getElementById('playlist-switcher'),
+          header = document.getElementById('playlist-header');
+      if (colplayer.currentPlaylist === 'albums') {
+        colplayer.player2.setTracklist(colplayer.collectionPlaylist);
+        fixQueueTitles(colplayer.queueTitles);
+        colplayer.currentPlaylist = 'favorites';
+        header.innerText = 'favorite tracks';
+        switcher.innerText = 'Switch to full albums';  
+      } else {
+        colplayer.player2.setTracklist(colplayer.albumPlaylist);
+        fixQueueTitles(colplayer.albumQueueTitles);
+        colplayer.currentPlaylist = 'albums';
+        header.innerText = 'albums';
+        switcher.innerText = 'Switch to favorite tracks';
+      }
+    }
   }
 
   function fixQueueTitles(titles){
@@ -57,6 +136,48 @@
     queue.forEach(function(item, index){
       item.innerHTML = `${index+1}. ${titles[index]}`;
     });
+  }
+
+  colplayer.shuffle = function () {
+    colplayer.player2.stop();
+    if (!colplayer.isShuffled) {
+      let a = colplayer.currentPlaylist === 'albums' ? colplayer.albumPlaylist.slice() : colplayer.collectionPlaylist.slice(),
+          shufQueue = [],
+          el = document.getElementById('shuffler');
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      a.forEach(function(track,i){
+        shufQueue.push(`${track.trackData.artist} - ${track.trackData.title}`);
+      })
+      colplayer.isShuffled = true;
+      el.innerText = '(unshuffle!)';
+      colplayer.player2.setTracklist(a);
+      let firstTrackEl;
+      // allow clicking on item to play appropriate track from shuffle list 
+      if (colplayer.currentPlaylist === 'favorites') {
+        a.forEach(function(track, i){
+          let id = track.itemId,
+              el = document.getElementById(track.domId);
+          el.setAttribute('data-shufflenum', i);
+          if (i === 0) {
+            firstTrackEl = el;
+          }
+        });
+      }
+      fixQueueTitles(shufQueue);
+      colplayer.currentItemEl(jQuery(firstTrackEl));
+    } else {
+      let unshuffled = colplayer.currentPlaylist === 'albums' ? colplayer.albumPlaylist : colplayer.collectionPlaylist,
+          regQueue = colplayer.currentPlaylist === 'albums' ? colplayer.albumQueueTitles : colplayer.queueTitles,
+          el = document.getElementById('shuffler');
+      colplayer.player2.setTracklist(unshuffled);
+      fixQueueTitles(regQueue);
+      colplayer.currentItemEl(jQuery(document.getElementById(unshuffled[0].domId)));
+      colplayer.isShuffled = false;
+      el.innerText = '(shuffle!)';      
+    }
   }
 
   function replaceFunctions(){
@@ -67,9 +188,8 @@
       let newTrack = self.currentTrack();
       if (!newTrack) return;
       let id = newTrack.itemId,
-          sel = 'collection-item-container_' + id,
-          el = document.getElementById(sel);
-      console.log(newTrack, sel, el);
+          el = document.getElementById(newTrack.domId);
+      console.log(newTrack, el);
       togglePlayButtons(colplayer.lastEl, true);
       togglePlayButtons(el);
       colplayer.lastEl = el;
@@ -107,7 +227,9 @@
                    grid.getAttribute('data-iswish') === 'true' ? 'wish' :
                    grid.getAttribute('data-isgiftsgiven') === 'true' ? 'gifts_given' :
                    'hidden',
-        tracknum = item.getAttribute('data-tracknum'),          
+        tracknum = colplayer.isShuffled ? item.getAttribute('data-shufflenum') :
+                   colplayer.currentPlaylist === 'favorites' ? item.getAttribute('data-tracknum') : 
+                   item.getAttribute('data-firsttrack'),          
         tralbumId = item.getAttribute("data-tralbumid"),
         tralbumType = item.getAttribute("data-tralbumtype"),
         itemId = item.getAttribute("data-itemid"),
@@ -133,16 +255,6 @@
     colplayer.currentItemKey(itemKey);
     colplayer.currentGridType(gridType);
     colplayer.player2.goToTrack(tracknum);
-    // togglePlayButtons(item);
-
-
-    // var tracklist = colplayer.tracklists[gridType][itemKey];
-    // colplayer.player2.setTracklist(tracklist);
-    // colplayer.player2.playPause(null);
-    // var timeEl = $(".track_play_time", colplayer.currentItemEl());
-    // if (!timeEl)
-    //     return;
-    // $(".time_total", timeEl).text(Time.timeStr(tracklist[0].trackData.duration))
   }
 
   // Handle playing elements

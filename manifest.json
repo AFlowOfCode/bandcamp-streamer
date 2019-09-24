@@ -1,7 +1,7 @@
 {
-    "name": "Bandcamp Feed Playlist",
+    "name": "Bandcamp Streamer",
     "version": "1.0",
-    "description": "Allow to play all of your feed in one click.",
+    "description": "Continously stream from Bandcamp",
     "permissions": ["activeTab", "declarativeContent"],
     "content_scripts": [
         {
