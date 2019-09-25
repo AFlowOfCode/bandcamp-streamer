@@ -4,67 +4,142 @@
         colplayer = window.collectionPlayer,
         jQuery = window.jQuery;
 
-  if (!bcplayer) {
-    // console.log('not on feed page');
-    // do wishlist next
-    loadCollection();
-    // return null;
-  }
-
-  // getcurrenttrack getcurrenttracklist / getcurrentplaylist
-  // collectionPlayer.player2.currentTrackIndex();
-  // collectionPlayer.player2.currentTracklist();
-
-  // this should eventually become reusable for feed as well
-  function observeTotal(page, parent) {
-    console.log('setting up observer on', parent);
-    let options = {
-      childList: true
-    },
-    observer = new MutationObserver((mutations) => {
-      console.log('detected playlist expansion');
-      let numTracks;
-      if (page === 'feed') {
-        // not all stories are playable tracks
-        numTracks = document.querySelectorAll('.story-innards .track_play_auxiliary').length;
-        if (numTracks > feedPlaylistLength) {
-          bindPlayButtons();
-          if (currentList === 'feed') {
-            checkDuplicates();
-          }
-        }
-      } else {
-        numTracks = window.CollectionData.sequence.length;
-        if (colplayer.collectionLength < numTracks) {
-          buildPlaylists(colplayer.collectionLength);
-          colplayer.collectionLength = numTracks;
-        }
-      }
-      console.log(`there are now ${numTracks} playable tracks in feed`);      
-    });
-    observer.observe(parent, options);
-  }
-
+  // some useful functions
+  // colplayer.player2.currentTrackIndex();
+  // colplayer.player2.currentTracklist();
   // list all access keys & track titles in console
-  // for (key in collectionPlayer.tracklists.collection) {console.log(`${key}: ${collectionPlayer.tracklists.collection[key][0].trackTitle}`);}
+  // for (key in colplayer.tracklists.collection) {console.log(`${key}: ${colplayer.tracklists.collection[key][0].trackTitle}`);}
+
+  if (!bcplayer) {
+    // on collection page & need to modify some of that player's functions + add shuffle
+    replaceFunctions();
+    addFunctions();
+    loadCollection();
+  }
+
+  /**********************************************************
+   ********** PLAYER FUNCTIONS ******************************
+   **********************************************************/ 
+
+  function replaceFunctions(){
+    let self = colplayer.player2;
+    self.setCurrentTrack = function(index) {
+      // console.log("index to set", index);
+      self.currentTrackIndex(index);
+      let newTrack = self.currentTrack();
+      if (!newTrack) return;
+      let id = newTrack.itemId,
+          el = document.getElementById(newTrack.domId);
+      // console.log("domId:", newTrack.domId);
+      // console.log(newTrack, el);
+      togglePlayButtons(colplayer.lastEl, true);
+      togglePlayButtons(el);
+      colplayer.lastEl = el;
+      self._playlist.load([newTrack.trackData]);
+      self.duration(self._playlist.duration());
+      setCurrentEl(el);
+      return true;
+    };
+    // have to redo these because currentTrackIndex returns a STRING and orig code just tacked a 1 onto it
+    // eg going from index 2 ended up with 21 instead of 3
+    self.prev = function() {
+      if (colplayer.pendingUpdate) {
+        updateTracklists(+self.currentTrackIndex() - 1);
+        return;
+      }
+      if (!self.hasPrev()) return false;
+      return self.goToTrack(+self.currentTrackIndex() - 1);
+    };
+    self.next = function() {
+      if (colplayer.pendingUpdate) {
+        updateTracklists(+self.currentTrackIndex() + 1);
+        return;
+      }
+      if (!self.hasNext()) return false;
+      return self.goToTrack(+self.currentTrackIndex() + 1);
+    };
+  }
+
+  function addFunctions(){
+    colplayer.shuffle = function () {
+      colplayer.player2.stop();
+      if (!colplayer.isShuffled) {
+        let a = colplayer.currentPlaylist === 'albums' ? colplayer.albumPlaylist.slice() : colplayer.collectionPlaylist.slice(),
+            shufQueue = [],
+            el = document.getElementById('shuffler');
+        for (let i = a.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [a[i], a[j]] = [a[j], a[i]];
+        }
+        a.forEach(function(track,i){
+          shufQueue.push(`${track.trackData.artist} - ${track.trackData.title}`);
+        })
+        colplayer.isShuffled = true;
+        el.innerText = '(unshuffle!)';
+        colplayer.player2.setTracklist(a);
+        let firstTrackEl;
+        // allow clicking on item to play appropriate track from shuffle list 
+        // need to do version of this for albums
+        if (colplayer.currentPlaylist === 'favorites') {
+          a.forEach((track, i) => {
+            let id = track.itemId,
+                el = document.getElementById(track.domId);
+            el.setAttribute('data-shufflenum', i);
+            if (i === 0) {
+              firstTrackEl = el;
+              setCurrentEl(firstTrackEl);
+            }
+          });
+        } else {
+          let items = document.querySelectorAll('#collection-items .track_play_hilite');
+          items.forEach((item,i) => {
+            let shuffledAlbum = [];
+            // find where all the album's tracks ended up
+            a.forEach((track, i) => {
+              if (track.itemId === item.getAttribute('data-itemid')) {
+                shuffledAlbum.push(i);
+              }
+            });
+            let shufTrack = shuffledAlbum.length === 1 ? shuffledAlbum[0] : 
+                            shuffledAlbum[Math.floor(Math.random() * shuffledAlbum.length)];
+            item.setAttribute('data-shufflenum', shufTrack);
+            // console.log('shuffled album:', a[shufTrack].title, 'chose:', shufTrack);
+          });
+          setCurrentEl(document.getElementById(a[0].domId));
+        }
+        fixQueueTitles(shufQueue);
+      } else {
+        let unshuffled = colplayer.currentPlaylist === 'albums' ? colplayer.albumPlaylist    : colplayer.collectionPlaylist,
+            regQueue =   colplayer.currentPlaylist === 'albums' ? colplayer.albumQueueTitles : colplayer.queueTitles,
+            el =         document.getElementById('shuffler');
+
+        colplayer.player2.setTracklist(unshuffled);
+        fixQueueTitles(regQueue);
+        setCurrentEl(document.getElementById(unshuffled[0].domId));
+        colplayer.isShuffled = false;
+        el.innerText = '(shuffle!)';      
+      }
+    }
+  }
+
+  /**********************************************************
+   ********** COLLECTION FUNCTIONS **************************
+   **********************************************************/ 
 
   function loadCollection() {
-    // need to modify some of the player's functions
-    replaceFunctions();
-
     colplayer.isOwner = document.getElementById('fan-banner').classList.contains('owner');
     colplayer.collectionLength = window.CollectionData.sequence.length;
 
     let initEl = buildPlaylists(0,colplayer.isOwner);
-
     setCurrentEl(initEl);
+
     // allow switching between full albums & favorite tracks
     if (colplayer.isOwner) playlistSwitcher(true); 
 
     // check if user expands collection
     observeTotal('collection', document.querySelector('#collection-items .collection-grid'));
 
-    // this gets the transport to show up on page load
+    // show transport on page load
     colplayer.player2._playlist.play(); 
     colplayer.player2._playlist.playpause(); 
 
@@ -75,21 +150,15 @@
     replaceClickHandlers();
   }
 
-  // sets the element for the playing object, needed for correct album cover play button display
-  function setCurrentEl(item) {
-    // this needs to be a jquery object
-    colplayer.currentItemEl(jQuery(item));
-  }
-
   function buildPlaylists(index, isOwner) {
+    // index is 0 on first run, > 0 when collection view expanded
     let items = document.querySelectorAll('#collection-items .track_play_hilite'),
         collectionPlaylist = index === 0 ? [] : colplayer.collectionPlaylist.slice(),
         queueTitles =        index === 0 ? [] : colplayer.queueTitles.slice(),
         albumPlaylist =      index === 0 || !isOwner ? [] : colplayer.albumPlaylist.slice(),
         albumQueueTitles =   index === 0 || !isOwner ? [] : colplayer.albumQueueTitles.slice();
 
-    for (let i = index; i < items.length; i++) {
-      
+    for (let i = index; i < items.length; i++) {    
       let id = items[i].getAttribute('data-itemid'),
           domId = items[i].id,
           // this contains the sequential keys of every item available
@@ -132,7 +201,8 @@
         }
         console.log(`pushed album ${album[0].title} by ${album[0].trackData.artist}, playlist length now ${albumPlaylist.length}`);
       }
-    }
+    } // end tracklist builder loop
+
     if (isOwner) {
       // don't immediately update & stop current song if this is an update
       if (index === 0 && colplayer.player2.showPlay()) {
@@ -160,6 +230,12 @@
     colplayer.queueTitles = queueTitles;
     colplayer.collectionPlaylist = collectionPlaylist;
     return items[0];
+  }
+
+  // sets the element for the playing object, needed for correct album cover play button display
+  function setCurrentEl(item) {
+    // this needs to be a jquery object
+    colplayer.currentItemEl(jQuery(item));
   }
 
   function playlistSwitcher(init) {
@@ -206,113 +282,12 @@
     });
   }
 
-  colplayer.shuffle = function () {
-    colplayer.player2.stop();
-    if (!colplayer.isShuffled) {
-      let a = colplayer.currentPlaylist === 'albums' ? colplayer.albumPlaylist.slice() : colplayer.collectionPlaylist.slice(),
-          shufQueue = [],
-          el = document.getElementById('shuffler');
-      for (let i = a.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [a[i], a[j]] = [a[j], a[i]];
-      }
-      a.forEach(function(track,i){
-        shufQueue.push(`${track.trackData.artist} - ${track.trackData.title}`);
-      })
-      colplayer.isShuffled = true;
-      el.innerText = '(unshuffle!)';
-      colplayer.player2.setTracklist(a);
-      let firstTrackEl;
-      // allow clicking on item to play appropriate track from shuffle list 
-      // need to do version of this for albums
-      if (colplayer.currentPlaylist === 'favorites') {
-        a.forEach((track, i) => {
-          let id = track.itemId,
-              el = document.getElementById(track.domId);
-          el.setAttribute('data-shufflenum', i);
-          if (i === 0) {
-            firstTrackEl = el;
-            setCurrentEl(firstTrackEl);
-          }
-        });
-      } else {
-        let items = document.querySelectorAll('#collection-items .track_play_hilite');
-        items.forEach((item,i) => {
-          let shuffledAlbum = [];
-          // find where all the album's tracks ended up
-          a.forEach((track, i) => {
-            if (track.itemId === item.getAttribute('data-itemid')) {
-              shuffledAlbum.push(i);
-            }
-          });
-          let shufTrack = shuffledAlbum.length === 1 ? shuffledAlbum[0] : 
-                          shuffledAlbum[Math.floor(Math.random() * shuffledAlbum.length)];
-          item.setAttribute('data-shufflenum', shufTrack);
-          // console.log('shuffled album:', a[shufTrack].title, 'chose:', shufTrack);
-        });
-        setCurrentEl(document.getElementById(a[0].domId));
-      }
-      fixQueueTitles(shufQueue);
-    } else {
-      let unshuffled = colplayer.currentPlaylist === 'albums' ? colplayer.albumPlaylist    : colplayer.collectionPlaylist,
-          regQueue =   colplayer.currentPlaylist === 'albums' ? colplayer.albumQueueTitles : colplayer.queueTitles,
-          el =         document.getElementById('shuffler');
-
-      colplayer.player2.setTracklist(unshuffled);
-      fixQueueTitles(regQueue);
-      setCurrentEl(document.getElementById(unshuffled[0].domId));
-      colplayer.isShuffled = false;
-      el.innerText = '(shuffle!)';      
-    }
-  }
-
   function updateTracklists(num) {
     console.log('updating tracklist while nothing is playing');
     colplayer.player2.setTracklist(colplayer.collectionPlaylist);
     if (colplayer.isOwner) colplayer.player2.setTracklist(colplayer.albumPlaylist);
     colplayer.pendingUpdate = false;
     if (num) colplayer.player2.goToTrack(num);
-  }
-
-  function replaceFunctions(){
-    let self = colplayer.player2;
-    self.setCurrentTrack = function(index) {
-      // console.log("index to set", index);
-      self.currentTrackIndex(index);
-      let newTrack = self.currentTrack();
-      if (!newTrack) return;
-      let id = newTrack.itemId,
-          el = document.getElementById(newTrack.domId);
-      // console.log("domId:", newTrack.domId);
-      // console.log(newTrack, el);
-      togglePlayButtons(colplayer.lastEl, true);
-      togglePlayButtons(el);
-      colplayer.lastEl = el;
-      self._playlist.load([newTrack.trackData]);
-      self.duration(self._playlist.duration());
-      setCurrentEl(el);
-      return true;
-    };
-    // have to redo these because currentTrackIndex returns a STRING and orig code just tacked a 1 onto it
-    // eg going from index 2 ended up with 21 instead of 3
-    self.prev = function() {
-      if (colplayer.pendingUpdate) {
-        updateTracklists(+self.currentTrackIndex() - 1);
-        return;
-      }
-        if (!self.hasPrev())
-            return false;
-        return self.goToTrack(+self.currentTrackIndex() - 1)
-    };
-    self.next = function() {
-      if (colplayer.pendingUpdate) {
-        updateTracklists(+self.currentTrackIndex() + 1);
-        return;
-      }
-        if (!self.hasNext())
-            return false;
-        return self.goToTrack(+self.currentTrackIndex() + 1)
-    };
   }
 
   function replaceClickHandlers(){
@@ -383,14 +358,195 @@
     }
   }
 
-  // user/feed
+  /**********************************************************
+   ********** FEED FUNCTIONS ********************************
+   **********************************************************/
 
   let feedPlaylist = [],
       feedPlaylistLength,
       releasePlaylist = [],
       releasePlaylistLength,
       currentList = 'feed',
-      pausedTrack;
+      pausedTrack; 
+
+  function FeedPlaylist() {
+      
+    // build playlists
+    let feedTracks = getTrackIds('feed'),
+        releaseTracks = getTrackIds('releases'),
+        originalPlaylist = bcplayer._playlist._playlist,
+        addedToFeed = [],
+        feedDuplicates = {};
+
+    // going to replace default playlist with filtered playlist
+    bcplayer._playlist.unload();
+
+    // sort all tracks into appropriate playlists because
+    // if track shows up in both feed and new release, it messes up the order of the original playlist
+    // by default, after 7 or 8 tracks it jumps to new releases 
+    // since they did not intend this to play through automatically
+    for (let i = 0; i < originalPlaylist.length; i++) {
+      let origId = originalPlaylist[i].id.toString();
+      if (feedTracks.indexOf(origId) != -1) {
+        let dupes = false,
+            timesInArray = countInArray(feedTracks, origId),
+            timesAdded = 0;
+        if (timesInArray > 1) {
+          console.log(`${origId} appears ${timesInArray} times in feed`);
+          if (!(origId in feedDuplicates)) {
+            feedDuplicates[origId] = {"times": timesInArray, "timesAdded": 0};
+          } else {
+            timesAdded = feedDuplicates[origId].timesAdded;
+          }
+          dupes = true;
+        }
+        // tracks can appear in both feed and new release
+        // if this occurs they will show up twice in the feed playlist too
+        // we only want it once in each list. Only add it to feed if not already added
+        // BUT if it actually shows up because multiple people bought it, we want it there again
+        if (addedToFeed.indexOf(originalPlaylist[i].id) == -1 || (dupes && timesAdded < timesInArray)) {
+          bcplayer._playlist._playlist.push(originalPlaylist[i]);
+          addedToFeed.push(originalPlaylist[i].id);
+          if (dupes) {
+            feedDuplicates[origId].timesAdded++;
+          }
+        }
+        // add it to release 
+        if (releaseTracks.indexOf(origId) != -1) {
+          releasePlaylist.push(originalPlaylist[i]);
+        }
+      } else if (releaseTracks.indexOf(origId) != -1) {
+        releasePlaylist.push(originalPlaylist[i]);
+      }
+    }
+    // 10 feed stories loaded by default, but could change on whims of bandcamp
+    // reference this to determine when tracks are added by scrolling
+    feedPlaylistLength = bcplayer._playlist.length();
+    // reference this in case any tracks added via scrolling while release list is playing
+    releasePlaylistLength = releasePlaylist.length;
+    
+    // this needs to be done every time new tracks are loaded at bottom 
+    // or won't be able to click on newly added tracks (they'd still work via the player prev/next buttons)
+    bindPlayButtons();      
+    observeTotal('feed', document.getElementById('story-list'));  
+
+    // Observable
+    this.playlist = bcplayer._playlist;
+    this._state = this.playlist._state;
+    this._track = this.playlist._track;
+    this._position = this.playlist._position;
+    this._duration = this.playlist._duration;
+    this.handlerNextTrack = function() { return this.next() }.bind(this);
+
+    this.$trackPlayWaypoint = bcplayer._waypoints[0];
+
+    if (this.$trackPlayWaypoint) {
+      this.$el = this.injectHtml();
+      this.$position = this.$el.querySelector('#track_play_waypoints_controls_position');
+      this.$duration = this.$el.querySelector('#track_play_waypoints_controls_duration');
+      this.observe();
+      console.debug('[bandcampFeedPlaylist] injected');
+    }
+  }
+
+  // Observe changes
+  FeedPlaylist.prototype.observe = function(e) {
+    const self = this;
+    const observers = [
+      { 'obj': this.playlist, prop: '_track' },
+      { 'obj': this.playlist, prop: '_state', callback: this.onStateUpdate.bind(this) },
+      { 'obj': this.playlist, prop: '_duration', callback: this.updateDuration.bind(this) },
+      { 'obj': this.playlist, prop: '_position', callback: this.updatePosition.bind(this) },
+    ];
+
+    observers.map(observer => {
+      Object.defineProperty(observer.obj, observer.prop, {
+        get: function() { return self[observer.prop]; },
+        set: function(newValue) {
+          if (newValue === self[observer.prop]) { return }
+          self[observer.prop] = newValue;
+          if (typeof observer.callback == 'function') {
+              return observer.callback(newValue);
+          }
+          return newValue;
+        }
+      });
+    });
+  }
+
+  // Methods
+  FeedPlaylist.prototype.playpause = function(e) {
+    if (e) {
+        e.preventDefault();
+    }
+    return this.playlist.playpause();
+  }
+
+  FeedPlaylist.prototype.next = function(e) {
+    if (e) {
+        e.preventDefault();
+    }
+    return this.playlist.next_track()
+  }
+
+  FeedPlaylist.prototype.previous = function(e) {
+    if (e) {
+        e.preventDefault();
+    }
+    return this.playlist.prev_track();
+  }
+
+  FeedPlaylist.prototype.onStateUpdate = function(state) {
+    // TODO: replace setTimeout
+    if (state === "COMPLETED") {
+        let timer = setTimeout(this.handlerNextTrack, 1000);
+        timer = undefined;
+    }
+    return;
+  }
+
+  // DOM
+  FeedPlaylist.prototype.updatePosition = function() {
+      return this.$position.innerText = window.Time.timeStr(this._position)
+  }
+
+  FeedPlaylist.prototype.updateDuration = function() {
+      return this.$duration.innerText = window.Time.timeStr(this._duration)
+  }
+
+  FeedPlaylist.prototype.injectHtml = function() {
+    const container = document.createElement('div');
+    container.id = "track_play_waypoint_controls";
+    const infos = [
+        { text: "0:00", id: "track_play_waypoints_controls_position" },
+        { text: "/" },
+        { text: "0:00", id: "track_play_waypoints_controls_duration" },
+    ];
+    const controls = [
+        { text: 'Previous', action: this.previous.bind(this) },
+        { text: 'Play/Pause', action: this.playpause.bind(this) },
+        { text: 'Next', action: this.next.bind(this) }
+    ];
+
+    infos.map(info => {
+        let element = document.createElement('span');
+        if (info.id) {
+            element.id = info.id;
+        }
+        element.innerText = info.text;
+        container.appendChild(element);
+    });
+
+    controls.map(control => {
+        let element = document.createElement('a');
+        element.href = "#";
+        element.innerText = control.text;
+        element.addEventListener('click', control.action)
+        container.appendChild(element);
+    });
+
+    return this.$trackPlayWaypoint.parentElement.appendChild(container);
+  }
 
   // get track ids for feed or releases playlists
   function getTrackIds(list) {
@@ -567,206 +723,52 @@
     console.log('new playlist:', list); 
   }
 
-  function FeedPlaylist() {
-      
-      // build playlists
-      let feedTracks = getTrackIds('feed'),
-          releaseTracks = getTrackIds('releases'),
-          originalPlaylist = bcplayer._playlist._playlist,
-          addedToFeed = [],
-          feedDuplicates = {};
+  /**********************************************************
+   ********** SHARED FUNCTIONS ******************************
+   **********************************************************/ 
 
-      // going to replace default playlist with filtered playlist
-      bcplayer._playlist.unload();
-
-      // sort all tracks into appropriate playlists because
-      // if track shows up in both feed and new release, it messes up the order of the original playlist
-      // by default, after 7 or 8 tracks it jumps to new releases 
-      // since they did not intend this to play through automatically
-      for (let i = 0; i < originalPlaylist.length; i++) {
-        let origId = originalPlaylist[i].id.toString();
-        if (feedTracks.indexOf(origId) != -1) {
-          let dupes = false,
-              timesInArray = countInArray(feedTracks, origId),
-              timesAdded = 0;
-          if (timesInArray > 1) {
-            console.log(`${origId} appears ${timesInArray} times in feed`);
-            if (!(origId in feedDuplicates)) {
-              feedDuplicates[origId] = {"times": timesInArray, "timesAdded": 0};
-            } else {
-              timesAdded = feedDuplicates[origId].timesAdded;
-            }
-            dupes = true;
-          }
-          // tracks can appear in both feed and new release
-          // if this occurs they will show up twice in the feed playlist too
-          // we only want it once in each list. Only add it to feed if not already added
-          // BUT if it actually shows up because multiple people bought it, we want it there again
-          if (addedToFeed.indexOf(originalPlaylist[i].id) == -1 || (dupes && timesAdded < timesInArray)) {
-            bcplayer._playlist._playlist.push(originalPlaylist[i]);
-            addedToFeed.push(originalPlaylist[i].id);
-            if (dupes) {
-              feedDuplicates[origId].timesAdded++;
-            }
-          }
-          // add it to release 
-          if (releaseTracks.indexOf(origId) != -1) {
-            releasePlaylist.push(originalPlaylist[i]);
-          }
-        } else if (releaseTracks.indexOf(origId) != -1) {
-          releasePlaylist.push(originalPlaylist[i]);
-        }
-      }
-      // 10 feed stories loaded by default, but could change on whims of bandcamp
-      // reference this to determine when tracks are added by scrolling
-      feedPlaylistLength = bcplayer._playlist.length();
-      // reference this in case any tracks added via scrolling while release list is playing
-      releasePlaylistLength = releasePlaylist.length;
-      
-      // this needs to be done every time new tracks are loaded at bottom 
-      // or won't be able to click on newly added tracks (they'd still work via the player prev/next buttons)
-      bindPlayButtons();        
-      let storyList = document.getElementById('story-list'),
-          options = {
-            childList: true
-          },
-          observer = new MutationObserver((mutations) => {
-            // not all stories are playable tracks
-            let numTracks = document.querySelectorAll('.story-innards .track_play_auxiliary').length;
-            if (numTracks > feedPlaylistLength) {
-              console.log(`there are now ${numTracks} playable tracks in feed`);
-              bindPlayButtons();
-              if (currentList === 'feed') {
-                checkDuplicates();
-              }
-            }
-          });
-      observer.observe(storyList, options);
-
-      // Observable
-      this.playlist = bcplayer._playlist;
-      this._state = this.playlist._state;
-      this._track = this.playlist._track;
-      this._position = this.playlist._position;
-      this._duration = this.playlist._duration;
-      this.handlerNextTrack = function() { return this.next() }.bind(this);
-
-      this.$trackPlayWaypoint = bcplayer._waypoints[0];
-
-      if (this.$trackPlayWaypoint) {
-          this.$el = this.injectHtml();
-          this.$position = this.$el.querySelector('#track_play_waypoints_controls_position');
-          this.$duration = this.$el.querySelector('#track_play_waypoints_controls_duration');
-           this.observe();
-          console.debug('[bandcampFeedPlaylist] injected');
-      }
-  }
-
-  // Observe changes
-  FeedPlaylist.prototype.observe = function(e) {
-      const self = this;
-      const observers = [
-          { 'obj': this.playlist, prop: '_track' },
-          { 'obj': this.playlist, prop: '_state', callback: this.onStateUpdate.bind(this) },
-          { 'obj': this.playlist, prop: '_duration', callback: this.updateDuration.bind(this) },
-          { 'obj': this.playlist, prop: '_position', callback: this.updatePosition.bind(this) },
-      ]
-
-      observers.map(observer => {
-          Object.defineProperty(observer.obj, observer.prop, {
-              get: function() { return self[observer.prop]; },
-              set: function(newValue) {
-                  if (newValue === self[observer.prop]) { return }
-                  self[observer.prop] = newValue;
-                  if (typeof observer.callback == 'function') {
-                      return observer.callback(newValue);
-                  }
-                  return newValue;
-              }
-          })
-      })
-  }
-
-  // Methods
-  FeedPlaylist.prototype.playpause = function(e) {
-      if (e) {
-          e.preventDefault();
-      }
-      return this.playlist.playpause();
-  }
-
-  FeedPlaylist.prototype.next = function(e) {
-      if (e) {
-          e.preventDefault();
-      }
-      return this.playlist.next_track()
-  }
-
-  FeedPlaylist.prototype.previous = function(e) {
-      if (e) {
-          e.preventDefault();
-      }
-      return this.playlist.prev_track();
-  }
-
-  FeedPlaylist.prototype.onStateUpdate = function(state) {
-      // TODO: replace setTimeout
-      if (state === "COMPLETED") {
-          let timer = setTimeout(this.handlerNextTrack, 1000);
-          timer = undefined;
-      }
-      return;
-  }
-
-  // DOM
-  FeedPlaylist.prototype.updatePosition = function() {
-      return this.$position.innerText = window.Time.timeStr(this._position)
-  }
-
-  FeedPlaylist.prototype.updateDuration = function() {
-      return this.$duration.innerText = window.Time.timeStr(this._duration)
-  }
-
-  FeedPlaylist.prototype.injectHtml = function() {
-      const container = document.createElement('div');
-      container.id = "track_play_waypoint_controls";
-      const infos = [
-          { text: "0:00", id: "track_play_waypoints_controls_position" },
-          { text: "/" },
-          { text: "0:00", id: "track_play_waypoints_controls_duration" },
-      ];
-      const controls = [
-          { text: 'Previous', action: this.previous.bind(this) },
-          { text: 'Play/Pause', action: this.playpause.bind(this) },
-          { text: 'Next', action: this.next.bind(this) }
-      ];
-
-      infos.map(info => {
-          let element = document.createElement('span');
-          if (info.id) {
-              element.id = info.id;
-          }
-          element.innerText = info.text;
-          container.appendChild(element);
-      });
-
-      controls.map(control => {
-          let element = document.createElement('a');
-          element.href = "#";
-          element.innerText = control.text;
-          element.addEventListener('click', control.action)
-          container.appendChild(element);
-      });
-
-      return this.$trackPlayWaypoint.parentElement.appendChild(container);
-  }
-
-  // Utilities
   function countInArray(array, value) {
     return array.reduce((n, x) => n + (x === value), 0);
   }
 
-  console.debug('[bandcampFeedPlaylist] loaded');
+  function observeTotal(page, parent) {
+    console.log('setting up observer on', parent);
+    let options = {
+      childList: true
+    },
+    observer = new MutationObserver((mutations) => {
+      console.log('detected playlist expansion');
+      let numTracks;
+      if (page === 'feed') {
+        // not all stories are playable tracks
+        numTracks = document.querySelectorAll('.story-innards .track_play_auxiliary').length;
+        if (numTracks > feedPlaylistLength) {
+          bindPlayButtons();
+          if (currentList === 'feed') {
+            checkDuplicates();
+          }
+        }
+      } else {
+        numTracks = window.CollectionData.sequence.length;
+        if (colplayer.collectionLength < numTracks) {
+          buildPlaylists(colplayer.collectionLength);
+          colplayer.collectionLength = numTracks;
+        }
+      }
+      console.log(`there are now ${numTracks} playable tracks in feed`);      
+    });
+    observer.observe(parent, options);
+  }
+
+  /**********************************************************
+   ********** UTILITY FUNCTIONS *****************************
+   **********************************************************/ 
+
+  function countInArray(array, value) {
+    return array.reduce((n, x) => n + (x === value), 0);
+  }
+
+  // init feed player
   if (bcplayer) {
     let newFeedPlaylist = new FeedPlaylist();   
   }
