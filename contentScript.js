@@ -11,20 +11,84 @@
     // return null;
   }
 
+  // getcurrenttrack getcurrenttracklist / getcurrentplaylist
+  // collectionPlayer.player2.currentTrackIndex();
+  // collectionPlayer.player2.currentTracklist();
+
+  // this should eventually become reusable for feed as well
+  function observeTotal(page, parent) {
+    console.log('setting up observer on', parent);
+    let options = {
+      childList: true
+    },
+    observer = new MutationObserver((mutations) => {
+      console.log('detected playlist expansion');
+      let numTracks;
+      if (page === 'feed') {
+        // not all stories are playable tracks
+        numTracks = document.querySelectorAll('.story-innards .track_play_auxiliary').length;
+        if (numTracks > feedPlaylistLength) {
+          bindPlayButtons();
+          if (currentList === 'feed') {
+            checkDuplicates();
+          }
+        }
+      } else {
+        numTracks = window.CollectionData.sequence.length;
+        if (colplayer.collectionLength < numTracks) {
+          buildPlaylists(colplayer.collectionLength);
+          colplayer.collectionLength = numTracks;
+        }
+      }
+      console.log(`there are now ${numTracks} playable tracks in feed`);      
+    });
+    observer.observe(parent, options);
+  }
+
   // list all access keys & track titles in console
   // for (key in collectionPlayer.tracklists.collection) {console.log(`${key}: ${collectionPlayer.tracklists.collection[key][0].trackTitle}`);}
 
   function loadCollection() {
     // need to modify some of the player's functions
     replaceFunctions();
-    let isOwner = document.getElementById('fan-banner').classList.contains('owner'),
-        items = document.querySelectorAll('#collection-items .track_play_hilite'),
-        collectionPlaylist = [],
-        albumPlaylist = [],
-        queueTitles = [],
-        albumQueueTitles = [];
 
-    for (let i = 0; i < items.length; i++) {
+    colplayer.isOwner = document.getElementById('fan-banner').classList.contains('owner');
+    colplayer.collectionLength = window.CollectionData.sequence.length;
+
+    let initEl = buildPlaylists(0,colplayer.isOwner);
+
+    setCurrentEl(initEl);
+    // allow switching between full albums & favorite tracks
+    if (colplayer.isOwner) playlistSwitcher(true); 
+
+    // check if user expands collection
+    observeTotal('collection', document.querySelector('#collection-items .collection-grid'));
+
+    // this gets the transport to show up on page load
+    colplayer.player2._playlist.play(); 
+    colplayer.player2._playlist.playpause(); 
+
+    // these get manipulated depending on play state
+    colplayer.transPlay = document.querySelector('#collection-player .playpause .play');
+    colplayer.transPause = document.querySelector('#collection-player .playpause .pause');
+    
+    replaceClickHandlers();
+  }
+
+  // sets the element for the playing object, needed for correct album cover play button display
+  function setCurrentEl(item) {
+    // this needs to be a jquery object
+    colplayer.currentItemEl(jQuery(item));
+  }
+
+  function buildPlaylists(index, isOwner) {
+    let items = document.querySelectorAll('#collection-items .track_play_hilite'),
+        collectionPlaylist = index === 0 ? [] : colplayer.collectionPlaylist.slice(),
+        queueTitles =        index === 0 ? [] : colplayer.queueTitles.slice(),
+        albumPlaylist =      index === 0 || !isOwner ? [] : colplayer.albumPlaylist.slice(),
+        albumQueueTitles =   index === 0 || !isOwner ? [] : colplayer.albumQueueTitles.slice();
+
+    for (let i = index; i < items.length; i++) {
       
       let id = items[i].getAttribute('data-itemid'),
           domId = items[i].id,
@@ -61,6 +125,7 @@
         if (album.length >= 1) {
           album.forEach(function(t,index){
             t.itemId = id;
+            t.domId = domId;
             albumPlaylist.push(t);
             albumQueueTitles.push(`${t.trackData.artist} - ${t.trackData.title}`);
           });
@@ -69,29 +134,32 @@
       }
     }
     if (isOwner) {
-      colplayer.player2.setTracklist(albumPlaylist);
-      colplayer.currentPlaylist = 'albums';
+      // don't immediately update & stop current song if this is an update
+      if (index === 0 && colplayer.player2.showPlay()) {
+        console.log("not playing:", colplayer.player2.showPlay());
+        colplayer.player2.setTracklist(albumPlaylist);
+        colplayer.currentPlaylist = 'albums';
+      } else {
+        colplayer.pendingUpdate = true;
+      }
       // these have to be available for playlistSwitcher
-      colplayer.collectionPlaylist = collectionPlaylist;
       colplayer.albumPlaylist = albumPlaylist;
-      colplayer.queueTitles = queueTitles;
-      colplayer.albumQueueTitles = albumQueueTitles;
-      playlistSwitcher(true); 
+      colplayer.albumQueueTitles = albumQueueTitles;     
       fixQueueTitles(albumQueueTitles);
     } else {
-      colplayer.currentPlaylist = 'favorites';
-      colplayer.player2.setTracklist(collectionPlaylist);      
+      if (index === 0 && colplayer.player2.showPlay()) {
+        console.log("not playing:", colplayer.player2.showPlay());
+        colplayer.player2.setTracklist(collectionPlaylist);      
+        colplayer.currentPlaylist = 'favorites';
+      } else {
+        colplayer.pendingUpdate = true;
+      }      
+
       fixQueueTitles(queueTitles);
     }
-    colplayer.currentItemEl(jQuery(items[0]));
-    // this gets the transport to show up on page load
-    colplayer.player2._playlist.play(); 
-    colplayer.player2._playlist.playpause(); 
-    
-    colplayer.transPlay = document.querySelector('#collection-player .playpause .play');
-    colplayer.transPause = document.querySelector('#collection-player .playpause .pause');
-    
-    replaceClickHandlers();
+    colplayer.queueTitles = queueTitles;
+    colplayer.collectionPlaylist = collectionPlaylist;
+    return items[0];
   }
 
   function playlistSwitcher(init) {
@@ -156,56 +224,91 @@
       colplayer.player2.setTracklist(a);
       let firstTrackEl;
       // allow clicking on item to play appropriate track from shuffle list 
+      // need to do version of this for albums
       if (colplayer.currentPlaylist === 'favorites') {
-        a.forEach(function(track, i){
+        a.forEach((track, i) => {
           let id = track.itemId,
               el = document.getElementById(track.domId);
           el.setAttribute('data-shufflenum', i);
           if (i === 0) {
             firstTrackEl = el;
+            setCurrentEl(firstTrackEl);
           }
         });
+      } else {
+        let items = document.querySelectorAll('#collection-items .track_play_hilite');
+        items.forEach((item,i) => {
+          let shuffledAlbum = [];
+          // find where all the album's tracks ended up
+          a.forEach((track, i) => {
+            if (track.itemId === item.getAttribute('data-itemid')) {
+              shuffledAlbum.push(i);
+            }
+          });
+          let shufTrack = shuffledAlbum.length === 1 ? shuffledAlbum[0] : 
+                          shuffledAlbum[Math.floor(Math.random() * shuffledAlbum.length)];
+          item.setAttribute('data-shufflenum', shufTrack);
+          // console.log('shuffled album:', a[shufTrack].title, 'chose:', shufTrack);
+        });
+        setCurrentEl(document.getElementById(a[0].domId));
       }
       fixQueueTitles(shufQueue);
-      colplayer.currentItemEl(jQuery(firstTrackEl));
     } else {
-      let unshuffled = colplayer.currentPlaylist === 'albums' ? colplayer.albumPlaylist : colplayer.collectionPlaylist,
-          regQueue = colplayer.currentPlaylist === 'albums' ? colplayer.albumQueueTitles : colplayer.queueTitles,
-          el = document.getElementById('shuffler');
+      let unshuffled = colplayer.currentPlaylist === 'albums' ? colplayer.albumPlaylist    : colplayer.collectionPlaylist,
+          regQueue =   colplayer.currentPlaylist === 'albums' ? colplayer.albumQueueTitles : colplayer.queueTitles,
+          el =         document.getElementById('shuffler');
+
       colplayer.player2.setTracklist(unshuffled);
       fixQueueTitles(regQueue);
-      colplayer.currentItemEl(jQuery(document.getElementById(unshuffled[0].domId)));
+      setCurrentEl(document.getElementById(unshuffled[0].domId));
       colplayer.isShuffled = false;
       el.innerText = '(shuffle!)';      
     }
   }
 
+  function updateTracklists(num) {
+    console.log('updating tracklist while nothing is playing');
+    colplayer.player2.setTracklist(colplayer.collectionPlaylist);
+    if (colplayer.isOwner) colplayer.player2.setTracklist(colplayer.albumPlaylist);
+    colplayer.pendingUpdate = false;
+    if (num) colplayer.player2.goToTrack(num);
+  }
+
   function replaceFunctions(){
     let self = colplayer.player2;
     self.setCurrentTrack = function(index) {
-      console.log("index to set", index);
+      // console.log("index to set", index);
       self.currentTrackIndex(index);
       let newTrack = self.currentTrack();
       if (!newTrack) return;
       let id = newTrack.itemId,
           el = document.getElementById(newTrack.domId);
-      console.log(newTrack, el);
+      // console.log("domId:", newTrack.domId);
+      // console.log(newTrack, el);
       togglePlayButtons(colplayer.lastEl, true);
       togglePlayButtons(el);
       colplayer.lastEl = el;
       self._playlist.load([newTrack.trackData]);
       self.duration(self._playlist.duration());
-      colplayer.currentItemEl(jQuery(el));
+      setCurrentEl(el);
       return true;
     };
     // have to redo these because currentTrackIndex returns a STRING and orig code just tacked a 1 onto it
     // eg going from index 2 ended up with 21 instead of 3
     self.prev = function() {
+      if (colplayer.pendingUpdate) {
+        updateTracklists(+self.currentTrackIndex() - 1);
+        return;
+      }
         if (!self.hasPrev())
             return false;
         return self.goToTrack(+self.currentTrackIndex() - 1)
     };
     self.next = function() {
+      if (colplayer.pendingUpdate) {
+        updateTracklists(+self.currentTrackIndex() + 1);
+        return;
+      }
         if (!self.hasNext())
             return false;
         return self.goToTrack(+self.currentTrackIndex() + 1)
@@ -248,7 +351,8 @@
       return;
     }
     colplayer.player2.stop();
-    colplayer.currentItemEl(jQuery(item)); // this needs to be a jquery object ... :O 
+    if (colplayer.pendingUpdate) updateTracklists();
+    setCurrentEl(item); 
     console.log(item);
     window.itemtest = item;
     colplayer.player2.showPlay();      
@@ -465,7 +569,6 @@
 
   function FeedPlaylist() {
       
-
       // build playlists
       let feedTracks = getTrackIds('feed'),
           releaseTracks = getTrackIds('releases'),
