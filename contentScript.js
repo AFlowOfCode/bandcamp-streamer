@@ -22,12 +22,18 @@
       let wishTab = document.querySelector('#grid-tabs > li[data-tab=wishlist]'),
           collectionTab = document.querySelector('#grid-tabs > li[data-tab=collection]'),
           tabClicked = function (e) {
-            let wishTab = document.getElementById('wishtab'),
-                collectionTab = document.getElementById('collectiontab'),
-                t = e.target.id === 'wishtab' ? 'wishlist' : 'collection';
+            e.stopPropagation();
+            let targetTab = false;
+            for (let i = 0; i < e.path.length; i++) {
+              if (e.path[i].id === 'wishtab') {
+                targetTab = 'wishlist';
+                break;
+              }
+            }
+            if (!targetTab) targetTab = 'collection';
             collectionTab.removeEventListener('click', tabClicked);
             wishTab.removeEventListener('click', tabClicked);
-            loadCollection(t);
+            loadCollection(targetTab);
           };
       wishTab.id = 'wishtab';
       collectionTab.id = 'collectiontab';
@@ -64,7 +70,7 @@
     // have to redo these because currentTrackIndex returns a STRING and orig code just tacked a 1 onto it
     // eg going from index 2 ended up with 21 instead of 3
     self.prev = function() {
-      if (colplayer.pendingUpdate) {
+      if (colplayer.pendingUpdate || colplayer.pendingWishUpdate) {
         updateTracklists(+self.currentTrackIndex() - 1);
         return;
       }
@@ -72,7 +78,7 @@
       return self.goToTrack(+self.currentTrackIndex() - 1);
     };
     self.next = function() {
-      if (colplayer.pendingUpdate) {
+      if (colplayer.pendingUpdate || colplayer.pendingWishUpdate) {
         updateTracklists(+self.currentTrackIndex() + 1);
         return;
       }
@@ -85,7 +91,9 @@
     colplayer.shuffle = function () {
       colplayer.player2.stop();
       if (!colplayer.isShuffled) {
-        let a = colplayer.currentPlaylist === 'albums' ? colplayer.albumPlaylist.slice() : colplayer.collectionPlaylist.slice(),
+        let a = colplayer.currentPlaylist === 'albums' ? colplayer.albumPlaylist.slice() : 
+                colplayer.currentPlaylist === 'favorites' ? colplayer.collectionPlaylist.slice() :
+                colplayer.wishPlaylist.slice(),
             shufQueue = [],
             el = document.getElementById('shuffler');
         for (let i = a.length - 1; i > 0; i--) {
@@ -101,7 +109,7 @@
         let firstTrackEl;
         // allow clicking on item to play appropriate track from shuffle list 
         // need to do version of this for albums
-        if (colplayer.currentPlaylist === 'favorites') {
+        if (colplayer.currentPlaylist === 'favorites' || colplayer.currentPlaylist === 'wish') {
           a.forEach((track, i) => {
             let id = track.itemId,
                 el = document.getElementById(track.domId);
@@ -149,13 +157,14 @@
 
   function loadCollection(tab) {
     colplayer.isOwner = document.getElementById('fan-banner').classList.contains('owner');
-    colplayer.collectionLength = window.CollectionData.sequence.length;
-    colplayer.wishlistLength = window.WishlistData.sequence.length;
+    colplayer.collectionLength = 0; //window.CollectionData.sequence.length;
+    colplayer.wishlistLength = 0; //window.WishlistData.sequence.length;
     colplayer.initialTab = tab,
     colplayer.currentTab = tab,
     colplayer.collectionBuilt = false,
     colplayer.wishBuilt = false;
 
+    console.log(`clicked on ${tab} first`);
     let initEl = tab === 'collection' ? buildPlaylists(0,colplayer.isOwner) : 
                  tab === 'wishlist'   ? buildWishPlaylist(0) : false;
     setCurrentEl(initEl);
@@ -176,7 +185,7 @@
   }
 
   function buildPlaylists(index, isOwner) {
-    console.log('building playlists, index:',index);
+    console.log('building playlists, index:',index, 'is owner:', isOwner);
     // index is 0 on first run, > 0 when collection view expanded
     let items = document.querySelectorAll('#collection-items .track_play_hilite'),
         collectionPlaylist = index === 0 ? [] : colplayer.collectionPlaylist.slice(),
@@ -232,7 +241,7 @@
 
     if (isOwner) {
       // don't immediately update & stop current song if this is an update
-      if (index === 0 && colplayer.player2.showPlay()) {
+      if (colplayer.player2.showPlay()) {
         console.log("not playing:", colplayer.player2.showPlay());
         colplayer.player2.setTracklist(albumPlaylist);
         colplayer.currentPlaylist = 'albums';
@@ -244,23 +253,24 @@
       colplayer.albumQueueTitles = albumQueueTitles;     
       setQueueTitles(albumQueueTitles);
     } else {
-      if (index === 0 && colplayer.player2.showPlay()) {
+      if (colplayer.player2.showPlay()) {
         console.log("not playing:", colplayer.player2.showPlay());
         colplayer.player2.setTracklist(collectionPlaylist);      
         colplayer.currentPlaylist = 'favorites';
+        setQueueTitles(queueTitles);        
       } else {
         colplayer.pendingUpdate = true;
       }      
-
-      setQueueTitles(queueTitles);
     }
     colplayer.queueTitles = queueTitles;
     colplayer.collectionPlaylist = collectionPlaylist;
     colplayer.collectionBuilt = true;
+    colplayer.collectionLength = items.length;
 
     // allow switching between full albums & favorite tracks
-    if (colplayer.isOwner && index === 0) playlistSwitcher(true); 
+    if (index === 0 && colplayer.player2.showPlay()) playlistSwitcher(true); 
 
+    replaceClickHandlers();  
     return items[0];
   }
 
@@ -273,7 +283,7 @@
 
     if (wishItems.length === 0) return;
 
-    for (let i = 0; i < wishItems.length; i++) {
+    for (let i = index; i < wishItems.length; i++) {
       let wishId = wishItems[i].getAttribute('data-itemid'),
           wishDomId = wishItems[i].id,
           wishKey = window.WishlistData.sequence[i],
@@ -281,8 +291,8 @@
 
       if (wishTrack) {
         console.log(`pushing ${wishTrack.trackData.artist} - ${wishTrack.trackData.title} to wish playlist`);
-        wishTrack.wishItemId = wishId;
-        wishTrack.wishDomId = wishDomId;
+        wishTrack.itemId = wishId;
+        wishTrack.domId = wishDomId;
         wishPlaylist.push(wishTrack);
         wishQueueTitles.push(`${wishTrack.trackData.artist} - ${wishTrack.trackData.title}`);
         wishItems[i].setAttribute('data-tracknum', i);
@@ -291,16 +301,20 @@
     colplayer.wishQueueTitles = wishQueueTitles;
     colplayer.wishPlaylist = wishPlaylist;
     colplayer.wishBuilt = true;
+    colplayer.wishlistLength = wishItems.length;
 
-    if (index === 0 && colplayer.player2.showPlay()) {
-      console.log("not playing wishlist:", colplayer.player2.showPlay());
-      colplayer.player2.setTracklist(wishPlaylist);
-      colplayer.currentPlaylist = 'wish';
+    // only load right away if wish tab is first music tab loaded
+    if (index === 0 && !colplayer.currentPlaylist) {
+      console.log('init wishlist');
+      colplayer.player2.setTracklist(wishPlaylist);      
+      playlistSwitcher(true,'wish');
       setQueueTitles(wishQueueTitles);
     } else {
-      colplayer.pendingUpdate = true;
+      console.log('wishlist pending update');
+      colplayer.pendingWishUpdate = true;
     }
 
+    replaceClickHandlers();  
     return wishItems[0];
   }
 
@@ -310,37 +324,58 @@
     colplayer.currentItemEl(jQuery(item));
   }
 
-  function playlistSwitcher(init) {
-    // make sure list starts unshuffled
+  function playlistSwitcher(init, switchTo) {
+    console.log('switching playlists, init:', init, 'switchTo', switchTo);
     if (colplayer.isShuffled) colplayer.shuffle(); 
     let queueHeader = document.querySelector('.queue-header h2');
     if (init) {
       let switcher = document.createElement('a'),
           parent = document.querySelector('#collection-player .controls-extra'),
-          header = '<span id="playlist-header" style="font-weight:600;">albums</span>',
+          startList = colplayer.isOwner ? 'albums' : 'favorites',
+          header = `<span id="playlist-header" style="font-weight:600;">${startList}</span>`,
           shuffle = '<span id="shuffler" style="margin-left:10px; font-size:0.7em; cursor: pointer;">(shuffle!)</span>';
-      switcher.href = '#';
-      switcher.setAttribute('onclick','return false;');
-      switcher.id = 'playlist-switcher';
-      switcher.style.marginRight = '10px';
-      switcher.innerText = 'Switch to favorite tracks';
-      parent.prepend(switcher);
-      switcher.addEventListener('click', () => playlistSwitcher());
-      queueHeader.innerHTML = `now playing ${header} ${shuffle}`;
-      document.getElementById('shuffler').addEventListener('click', () => colplayer.shuffle());
+
+      queueHeader.innerHTML = colplayer.isOwner ? `now playing ${header} ${shuffle}` : `now playing ${header}`;
+
+      // only owners have full albums & can shuffle
+      if (colplayer.isOwner) {
+        switcher.href = '#';
+        switcher.setAttribute('onclick','return false;');
+        switcher.id = 'playlist-switcher';
+        switcher.style.marginRight = '10px';
+        switcher.innerText = 'Switch to favorite tracks';
+        parent.prepend(switcher);
+        switcher.addEventListener('click', () => playlistSwitcher());
+        document.getElementById('shuffler').addEventListener('click', () => colplayer.shuffle());
+      }
+      if (switchTo === 'wish') {
+        // init was sent from wish tab
+        playlistSwitcher(false, 'wish');
+      }
     } else {
-      if (colplayer.currentPlaylist === 'wish') {
+      let switcher = document.getElementById('playlist-switcher'),
+          header = document.getElementById('playlist-header'),
+          shuffler = document.getElementById('shuffler');
+      if (switchTo === 'wish') {
         colplayer.player2.setTracklist(colplayer.wishPlaylist);
         setQueueTitles(colplayer.wishQueueTitles);
-      } else {
-        let switcher = document.getElementById('playlist-switcher'),
-            header = document.getElementById('playlist-header');
-        if (colplayer.currentPlaylist === 'albums') {
+        colplayer.currentPlaylist = 'wish';
+        header.innerText = 'wishlist';
+        if (colplayer.isOwner) {
+          shuffler.style.display = 'none'; // no shuffle on wishlist
+          switcher.innerText = '';
+        }
+      } else {        
+        // default to favorites when switching from wish
+        if (colplayer.currentPlaylist === 'albums' || colplayer.currentPlaylist === 'wish' || !colplayer.isOwner) {
           colplayer.player2.setTracklist(colplayer.collectionPlaylist);
           setQueueTitles(colplayer.queueTitles);
           colplayer.currentPlaylist = 'favorites';
           header.innerText = 'favorite tracks';
-          switcher.innerText = 'Switch to full albums';  
+          if (colplayer.isOwner) {
+            shuffler.style.display = 'inline-block';
+            switcher.innerText = 'Switch to full albums';  
+          }
         } else {
           colplayer.player2.setTracklist(colplayer.albumPlaylist);
           setQueueTitles(colplayer.albumQueueTitles);
@@ -353,6 +388,7 @@
   }
 
   function setQueueTitles(titles){
+    console.log('updating queue to # titles', titles.length);
     let queue = document.querySelectorAll('.queue li > .info');
     queue.forEach(function(item, index){
       item.innerHTML = `${index+1}. ${titles[index]}`;
@@ -361,13 +397,26 @@
 
   function updateTracklists(num) {
     console.log('updating tracklist while nothing is playing');
-    colplayer.player2.setTracklist(colplayer.collectionPlaylist);
-    if (colplayer.isOwner) colplayer.player2.setTracklist(colplayer.albumPlaylist);
-    colplayer.pendingUpdate = false;
+    if (colplayer.pendingUpdate) {
+      colplayer.player2.setTracklist(colplayer.collectionPlaylist);
+      setQueueTitles(colplayer.queueTitles);
+      // test if this makes it always swap to albums even if on favorites
+      if (colplayer.isOwner) {
+        colplayer.player2.setTracklist(colplayer.albumPlaylist);
+        setQueueTitles(colplayer.albumQueueTitles);
+      }
+      colplayer.pendingUpdate = false;
+    } else if (colplayer.pendingWishUpdate) {
+      console.log('wishlist updated');
+      colplayer.player2.setTracklist(colplayer.wishPlaylist);
+      setQueueTitles(colplayer.wishQueueTitles);
+      colplayer.pendingWishUpdate = false;
+    }    
     if (num) colplayer.player2.goToTrack(num);
   }
 
   function replaceClickHandlers(){
+    console.log('replacing click handlers');
     let players = document.getElementsByClassName('track_play_auxiliary');
     Array.from(players).forEach(function(player,i){
       player.addEventListener('click', playerHandler);
@@ -381,8 +430,16 @@
         gridType = grid.getAttribute('data-ismain') === 'true' ? 'collection' :
                    grid.getAttribute('data-iswish') === 'true' ? 'wish' :
                    grid.getAttribute('data-isgiftsgiven') === 'true' ? 'gifts_given' :
-                   'hidden',
-        tracknum = colplayer.isShuffled ? item.getAttribute('data-shufflenum') :
+                   'hidden';
+
+    // need to set grid & deal with playlist switching before below
+    if (gridType === 'wish' && colplayer.currentPlaylist !== 'wish') {
+      playlistSwitcher(false,'wish');
+    } else if (gridType === 'collection' && colplayer.currentPlaylist === 'wish') {
+      playlistSwitcher(false);
+    }
+
+    let tracknum = colplayer.isShuffled ? item.getAttribute('data-shufflenum') :
                    colplayer.currentPlaylist === 'favorites' || colplayer.currentPlaylist === 'wish' ? item.getAttribute('data-tracknum') : 
                    item.getAttribute('data-firsttrack'),          
         tralbumId = item.getAttribute("data-tralbumid"),
@@ -390,8 +447,6 @@
         itemId = item.getAttribute("data-itemid"),
         itemType = item.getAttribute("data-itemtype").slice(0, 1),
         itemKey = itemType + itemId;
-
-    console.log('grid:',gridType);
 
     if (item.classList.contains("no-streaming")) 
       return;
@@ -405,15 +460,12 @@
       return;
     }
     colplayer.player2.stop();
-    if (colplayer.pendingUpdate) updateTracklists();
+    if (colplayer.pendingUpdate || colplayer.pendingWishUpdate) updateTracklists();
     setCurrentEl(item); 
     console.log(item);
     colplayer.currentItemKey(itemKey);
     colplayer.currentGridType(gridType);
-    if (gridType === 'wish' && colplayer.currentPlaylist !== 'wish') {
-      colplayer.currentPlaylist === 'wish';
-      playlistSwitcher();
-    }
+    
     colplayer.player2.goToTrack(tracknum);
   }
 
@@ -830,13 +882,22 @@
           }
         }
       } else {
-        if (page === 'collection') {
-          numTracks = window.CollectionData.sequence.length;
+        numTracks = page === 'collection' ? window.CollectionData.sequence.length : window.WishlistData.sequence.length;
+        let items = page === 'collection' ? 
+                    document.querySelectorAll('#collection-items .track_play_hilite') :
+                    document.querySelectorAll('#wishlist-items .track_play_hilite');
+        console.log('tracks in tab:', items.length, 'tracks ready:', numTracks);
+        if (items.length < numTracks) {
+          // this means mutation observer triggered build before all the items showed up
+          console.log('waiting on missing items');
+          return;
+        }
+        if (page === 'collection') {          
           if (colplayer.collectionLength < numTracks) {
             console.log('collectionLength:',colplayer.collectionLength,'numtracks',numTracks);
             if (colplayer.collectionBuilt) {
               console.log('adding to collection playlist');
-              buildPlaylists(colplayer.collectionLength);              
+              buildPlaylists(colplayer.collectionLength, colplayer.isOwner);              
             } else {
               console.log('initializing collection playlist');
               buildPlaylists(0, colplayer.isOwner);
@@ -844,7 +905,6 @@
             colplayer.collectionLength = numTracks;
           }
         } else {  // wishlist tab
-          numTracks = window.WishlistData.sequence.length;
           if (colplayer.wishlistLength < numTracks) {
             console.log('wishlistLength:',colplayer.wishlistLength,'numtracks',numTracks);
             if (colplayer.wishBuilt) {
@@ -859,7 +919,7 @@
         }
         
       }
-      console.log(`there are now ${numTracks} playable tracks in feed`);      
+      console.log(`there are now ${numTracks} playable tracks in feed`);    
     });
     observer.observe(parent, options);
   }
