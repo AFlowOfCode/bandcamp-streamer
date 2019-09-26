@@ -24,6 +24,7 @@
     display: inline-block;
 }
 
-#sidebar .track_play_waypoint.activated {
+#sidebar .track_play_waypoint.stream-activated, #sidebar .track_play_waypoint.activated {
     bottom: 32px !important;
+    opacity: 1 !important;
 }

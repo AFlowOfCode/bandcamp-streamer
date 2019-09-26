@@ -500,7 +500,8 @@
       releasePlaylist = [],
       releasePlaylistLength,
       currentList = 'feed',
-      pausedTrack; 
+      pausedTrack,
+      nowPlaying = document.getElementById('track_play_waypoint');
 
   function FeedPlaylist() {
       
@@ -510,6 +511,7 @@
         originalPlaylist = bcplayer._playlist._playlist,
         addedToFeed = [],
         feedDuplicates = {};
+
 
     // going to replace default playlist with filtered playlist
     bcplayer._playlist.unload();
@@ -642,6 +644,10 @@
 
   FeedPlaylist.prototype.onStateUpdate = function(state) {
     console.log("onStateUpdate:", state, "track:", this._track);
+
+    // on very first play (which will be first state update) set the "now playing / last played" visible permanently
+    // if set before first play, appears broken (has no img until something is loaded)
+    if (!nowPlaying.classList.contains('stream-activated')) nowPlaying.classList.add('stream-activated');
 
     if ((state === 'PLAYING' || state === 'PAUSED') 
          && this._nextTrack 
