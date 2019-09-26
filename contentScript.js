@@ -517,9 +517,10 @@
     // sort all tracks into appropriate playlists because
     // if track shows up in both feed and new release, it messes up the order of the original playlist
     // by default, after 7 or 8 tracks it jumps to new releases 
-    // since they did not intend this to play through automatically
+    // (since they did not intend this to play through automatically)
     for (let i = 0; i < originalPlaylist.length; i++) {
       let origId = originalPlaylist[i].id.toString();
+      // console.log(`index ${i} origId ${origId}`);
       if (feedTracks.indexOf(origId) != -1) {
         let dupes = false,
             timesInArray = countInArray(feedTracks, origId),
@@ -538,8 +539,12 @@
         // we only want it once in each list. Only add it to feed if not already added
         // BUT if it actually shows up because multiple people bought it, we want it there again
         if (addedToFeed.indexOf(originalPlaylist[i].id) == -1 || (dupes && timesAdded < timesInArray)) {
+          // sometimes tracks in the beginning of the playlist are not on the page yet
+          // make sure the tracknum matches index num 
+          originalPlaylist[i].tracknum = bcplayer._playlist._playlist.length;
           bcplayer._playlist._playlist.push(originalPlaylist[i]);
           addedToFeed.push(originalPlaylist[i].id);
+          console.log(`feed: added ${originalPlaylist[i].title}, tracknum ${originalPlaylist[i].tracknum} to slot ${bcplayer._playlist._playlist.length - 1}`);
           if (dupes) {
             feedDuplicates[origId].timesAdded++;
           }
@@ -550,14 +555,18 @@
         }
       } else if (releaseTracks.indexOf(origId) != -1) {
         releasePlaylist.push(originalPlaylist[i]);
+        console.log(`release: added ${originalPlaylist[i].title}, tracknum ${originalPlaylist[i].tracknum} to slot ${i}`);
+      } else {
+        // track is in playlist but not yet on page, so we don't need it right now
       }
     }
     // 10 feed stories loaded by default, but could change on whims of bandcamp
     // reference this to determine when tracks are added by scrolling
     feedPlaylistLength = bcplayer._playlist.length();
+    console.log('initial feed playlist:',bcplayer._playlist._playlist);
     // reference this in case any tracks added via scrolling while release list is playing
     releasePlaylistLength = releasePlaylist.length;
-    
+
     // this needs to be done every time new tracks are loaded at bottom 
     // or won't be able to click on newly added tracks (they'd still work via the player prev/next buttons)
     bindPlayButtons();      
@@ -566,9 +575,11 @@
     // Observable
     this.playlist = bcplayer._playlist;
     this._state = this.playlist._state;
-    this._track = this.playlist._track;
+    // _track sometimes is a string & is tracknum property of TrackInfo object (index val of playlist + 1)
+    this._track = this.playlist._track;      
     this._position = this.playlist._position;
     this._duration = this.playlist._duration;
+    this._nextTrack = false;                  // evade bc's auto-reset & ensure correct track gets played
     this.handlerNextTrack = function() { return this.next() }.bind(this);
 
     this.$trackPlayWaypoint = bcplayer._waypoints[0];
@@ -630,10 +641,32 @@
   }
 
   FeedPlaylist.prototype.onStateUpdate = function(state) {
-    // TODO: replace setTimeout
+    console.log("onStateUpdate:", state, "track:", this._track);
+
+    if ((state === 'PLAYING' || state === 'PAUSED') 
+         && this._nextTrack 
+         && +this._track !== this._nextTrack) {
+      console.log('force playing correct track', this._nextTrack);
+      this.playlist.play_track(this._nextTrack);
+    } else if ((state === 'IDLE' || state === 'PAUSED') && +this._track === this._nextTrack) {
+      console.log('force playing correct track (again)', this._nextTrack);
+      this.playlist.play_track(this._nextTrack);
+    } else if (state === 'PLAYING' && +this._track === this._nextTrack) {
+      console.log('Jeez, finally');
+      this._nextTrack = false;
+    }
+
     if (state === "COMPLETED") {
-        let timer = setTimeout(this.handlerNextTrack, 1000);
-        timer = undefined;
+      // bc sends an automatic stop about .5 - 1s after track ends, then resets the track, hence the above forcing
+      // console shows: Cookie comm channel playlist sending message stop ["stop"]
+      // not sure but it might come from _stop_other_players which is potentially for other tabs open w/ bc in them?
+      // this ALWAYS happens, so it's safe to always force the next track when one ends and the list is playing through
+      // if by momentary chance a user clicks a different track in between the switch, it might break order w/out 
+      // resetting _nextTrack to false on click
+      // TODO: deal with that later if it seems to be an issue
+      this._nextTrack = +this._track + 1;
+      // console.log('set force track:',+this._nextTrack);
+      this.playlist.play_track(+this._track + 1);
     }
     return;
   }
@@ -689,10 +722,13 @@
         trackCollection = [];
     for (let i = 0; i < entries.length; i++) {
       let track = entries[i].getAttribute('data-trackid');
+          // tracknum = entries[i].getAttribute('data-tracknum');
       if (track !== '') {
           trackCollection.push(track);
-          // console.log(track);
-      } 
+          // console.log('trackid:',track,'tracknum',tracknum);
+      } else {
+        console.log('got a story with no track');
+      }
     }
     return trackCollection;
   }
@@ -723,12 +759,12 @@
         bcplayer.currently_playing_track().id.toString() === trackId) {
       pausedTrack = trackId;
       console.log('pausing');
-      newFeedPlaylist.playpause();
+      feedPlayer.playpause();
     } else {
       console.log('found track, playing now');
       if (pausedTrack === trackId) {
         console.log("unpausing");
-        newFeedPlaylist.playpause();
+        feedPlayer.playpause();
         pausedTrack = '';
       } else {                  
         bcplayer._playlist.play_track(trackNum);
@@ -933,7 +969,5 @@
   }
 
   // init feed player
-  if (bcplayer) {
-    let newFeedPlaylist = new FeedPlaylist();   
-  }
+  const feedPlayer = bcplayer ? new FeedPlaylist() : false;   
 })(window, document);
