@@ -740,6 +740,7 @@
     let numEls = document.querySelectorAll(`.collection-item-container[data-trackid="${id}"]`).length,
         numPrices = document.querySelectorAll(`.collection-item-container[data-trackid="${id}"] .price-display`).length,
         alreadyShown = numEls === numPrices;
+
     if (!alreadyShown) {
       let el = document.querySelectorAll(`.collection-item-container[data-trackid="${id}"] li.buy-now`),
           display = document.createElement('span');
@@ -747,7 +748,8 @@
       display.innerText = price;
       if (el) {
         for (let i = numPrices; i < el.length; i++) {
-          el[i].appendChild(display);
+          let clone = display.cloneNode(true);
+          el[i].appendChild(clone);
         }      
       }
     }
