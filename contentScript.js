@@ -496,7 +496,8 @@
    ********** FEED FUNCTIONS ********************************
    **********************************************************/
 
-  let feedPlaylist = [],
+  let originalPlaylist = bcplayer._playlist._playlist,
+      feedPlaylist = [],
       feedPlaylistLength,
       releasePlaylist = [],
       releasePlaylistLength,
@@ -509,7 +510,6 @@
     // build playlists
     let feedTracks = getTrackIds('feed'),
         releaseTracks = getTrackIds('releases'),
-        originalPlaylist = bcplayer._playlist._playlist,
         addedToFeed = [],
         feedDuplicates = {};
 
@@ -727,7 +727,7 @@
     let price = {};
     for (let i = 0; i < pagedata.track_list.length; i++) {
       if (pagedata.track_list[i].id == id) {
-        console.log(i, pagedata.track_list[i]);
+        // console.log(i, pagedata.track_list[i]);
         price.unit = pagedata.track_list[i].currency === 'USD' ? '$' : 
                      pagedata.track_list[i].currency === 'EUR' ? '€' :
                      pagedata.track_list[i].currency === 'GBP' ? '£' :
@@ -737,7 +737,6 @@
       }
     }
     price = Object.entries(price).length > 0 ? price.unit + price.cost : '';
-    console.log('price:', price);
     let numEls = document.querySelectorAll(`.collection-item-container[data-trackid="${id}"]`).length,
         numPrices = document.querySelectorAll(`.collection-item-container[data-trackid="${id}"] .price-display`).length,
         alreadyShown = numEls === numPrices;
@@ -815,15 +814,25 @@
 
   // need track numbers on the elements to ensure proper track gets played
   function setTrackNumbers() {
-    let feedTracks = document.querySelectorAll('.story-innards .track_play_auxiliary');
-    let releaseTracks = document.querySelectorAll('#new-releases-vm .track_play_auxiliary');
+    let feedTracks = document.querySelectorAll('.story-innards .track_play_auxiliary'),
+        releaseTracks = document.querySelectorAll('#new-releases-vm .track_play_auxiliary'),
+        // tracks not found in either list (bc error?)
+        // note this only sends back dead tracks found originally in feed list
+        // haven't seen a deadtrack issue for release list
+        deadTracks = verifyInPlaylist(feedTracks),
+        skips = 0;
+
     for (let i = 0; i < feedTracks.length; i++) {
-      feedTracks[i].setAttribute('data-tracknum', i);
+      if (deadTracks.indexOf(i) === -1) {
+        feedTracks[i].setAttribute('data-tracknum', i - skips);
+      } else {
+        skips++;
+        console.log(`skipped story ${i} (deadtrack), num skips: ${skips}`);
+      }
     }
     for (let j = 0; j < releaseTracks.length; j++) {
       releaseTracks[j].setAttribute('data-tracknum', j);
     }
-    verifyInPlaylist(feedTracks);
   }
 
   // because bandcamp doesn't add scroll-added tracks to the playlist
@@ -833,6 +842,7 @@
       // need to copy over any scroll-added tracks first
       copyScrollAddedTracks();
     }
+    let deadTracks = [];
     for (let i = 0; i < feedTracks.length; i++) {
       let trackId = feedTracks[i].getAttribute('data-trackid'),
           playlist = currentList === 'feed' ? playerview._playlist._playlist : feedPlaylist,
@@ -841,15 +851,22 @@
       if (trackFound !== 0 && !trackFound) {
         console.log(`${trackId} not found in feed list, should be tracknum ${i}`);
         let releaseIndex = findInPlaylist(releasePlaylist, trackId),
-            trackObject = releasePlaylist[releaseIndex];
-        spliceIntoList(playlist, i, trackObject);
+            originalIndex = findInPlaylist(originalPlaylist, trackId),
+            trackObject = releaseIndex ? releasePlaylist[releaseIndex] : originalIndex ? originalPlaylist[originalIndex] : false;
+        console.log('found in release?', releaseIndex, 'original?', originalIndex, trackObject);
+        if (releaseIndex || originalIndex) {
+          spliceIntoList(playlist, i, trackObject);
+        } else {
+          deadTracks.push(i);
+        }
       }
     }      
+    return deadTracks;
   }
 
   function findInPlaylist(list, track) {
     for (let i = 0; i < list.length; i++) {
-      if (list[i].id.toString() === track) {
+      if (list[i].id && list[i].id.toString() === track) {
         // beware this returns zero
         return i;
       }
@@ -903,18 +920,25 @@
         for (let d = i + 1; d < feedTracks.length; d++) {
           if (feedTracks[d] === feedTracks[i]) {
             console.log('found dupe at index', d);
-            dupes.push(d);
+            let listToCheck = currentList === 'release' ? feedPlaylist : bcplayer._playlist._playlist;
+            if (listToCheck[d].id != feedTracks[i]) {
+              console.log('found this track there instead', listToCheck[d]);
+              dupes.push(d);
+            }
           }
         }
         // splice copies of the tracks into the playlist
-        console.log(`making ${instances - 1} copies of ${feedTracks[i]}`);
-        for (let s = 0; s < dupes.length; s++) {
-          if (currentList === 'release') {
-            spliceIntoList(feedPlaylist, dupes[s], feedPlaylist[i]);
-          } else {
-            spliceIntoList(bcplayer._playlist._playlist, dupes[s], bcplayer._playlist._playlist[i]);    
+        if (dupes.length > 0) {
+          console.log(`making ${dupes.length} copies of ${feedTracks[i]}`);
+          for (let s = 0; s < dupes.length; s++) {
+            if (currentList === 'release') {
+              spliceIntoList(feedPlaylist, dupes[s], feedPlaylist[i]);
+            } else {
+              spliceIntoList(bcplayer._playlist._playlist, dupes[s], bcplayer._playlist._playlist[i]);    
+            }
           }
         }
+        // don't check again with later instances of this id
         alreadyCopied.push(feedTracks[i]);
       }
     }
@@ -959,7 +983,11 @@
             checkDuplicates();
           }
           for (let i = feedPlaylistLength; i < numTracks; i++) {
-            setPrice(bcplayer._playlist._playlist[i].id);
+            if (bcplayer._playlist._playlist[i]) {
+              setPrice(bcplayer._playlist._playlist[i].id);              
+            } else {
+              console.log(`track ${i} doesn't seem to exist`, bcplayer._playlist._playlist[i]);
+            }
           }
         }
       } else {
@@ -1000,7 +1028,7 @@
         }
         
       }
-      console.log(`there are now ${numTracks} playable tracks in feed`);    
+      console.log(`there are now ${numTracks} playable tracks in feed (minus any dead tracks)`);    
     });
     observer.observe(parent, options);
   }
