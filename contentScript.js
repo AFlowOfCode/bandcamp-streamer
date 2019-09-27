@@ -174,8 +174,9 @@
     observeTotal('wishlist', document.querySelector('#wishlist-items .collection-grid'));
 
     // show transport on page load
-    colplayer.player2._playlist.play(); 
-    colplayer.player2._playlist.playpause(); 
+    // but will stop any other currently playing tabs
+    // colplayer.player2._playlist.play(); 
+    // colplayer.player2._playlist.playpause(); 
 
     // these get manipulated depending on play state
     colplayer.transPlay = document.querySelector('#collection-player .playpause .play');
@@ -544,6 +545,7 @@
           // sometimes tracks in the beginning of the playlist are not on the page yet
           // make sure the tracknum matches index num 
           originalPlaylist[i].tracknum = bcplayer._playlist._playlist.length;
+          setPrice(originalPlaylist[i].id);
           bcplayer._playlist._playlist.push(originalPlaylist[i]);
           addedToFeed.push(originalPlaylist[i].id);
           console.log(`feed: added ${originalPlaylist[i].title}, tracknum ${originalPlaylist[i].tracknum} to slot ${bcplayer._playlist._playlist.length - 1}`);
@@ -558,6 +560,7 @@
       } else if (releaseTracks.indexOf(origId) != -1) {
         releasePlaylist.push(originalPlaylist[i]);
         console.log(`release: added ${originalPlaylist[i].title}, tracknum ${originalPlaylist[i].tracknum} to slot ${i}`);
+        setPrice(originalPlaylist[i].id);
       } else {
         // track is in playlist but not yet on page, so we don't need it right now
       }
@@ -720,6 +723,38 @@
     return this.$trackPlayWaypoint.parentElement.appendChild(container);
   }
 
+  function setPrice(id) {
+    let price = {};
+    for (let i = 0; i < pagedata.track_list.length; i++) {
+      if (pagedata.track_list[i].id == id) {
+        console.log(i, pagedata.track_list[i]);
+        price.unit = pagedata.track_list[i].currency === 'USD' ? '$' : 
+                     pagedata.track_list[i].currency === 'EUR' ? '€' :
+                     pagedata.track_list[i].currency === 'GBP' ? '£' :
+                     pagedata.track_list[i].currency;
+        price.cost = pagedata.track_list[i].price === 0 ? '0+' : pagedata.track_list[i].price.toString();
+        break;
+      }
+    }
+    price = Object.entries(price).length > 0 ? price.unit + price.cost : '';
+    console.log('price:', price);
+    let numEls = document.querySelectorAll(`.collection-item-container[data-trackid="${id}"]`).length,
+        numPrices = document.querySelectorAll(`.collection-item-container[data-trackid="${id}"] .price-display`).length,
+        alreadyShown = numEls === numPrices;
+    if (!alreadyShown) {
+      let el = document.querySelectorAll(`.collection-item-container[data-trackid="${id}"] li.buy-now`),
+          display = document.createElement('span');
+      display.classList.add('price-display');
+      display.innerText = price;
+      if (el) {
+        for (let i = numPrices; i < el.length; i++) {
+          el[i].appendChild(display);
+        }      
+      }
+    }
+    
+  }
+
   // get track ids for feed or releases playlists
   function getTrackIds(list) {
     console.log(`getting track ids for ${list} list`);
@@ -846,6 +881,7 @@
     if (bcplayer._playlist.length() > releasePlaylistLength) {
       console.log(`${bcplayer._playlist.length() - releasePlaylistLength} tracks added by scrolling`);
       for (let i = releasePlaylistLength; i < bcplayer._playlist.length(); i++) {
+        setPrice(bcplayer._playlist._playlist[i].id);
         feedPlaylist.push(bcplayer._playlist._playlist[i]);
       }
     } 
@@ -921,6 +957,9 @@
           bindPlayButtons();
           if (currentList === 'feed') {
             checkDuplicates();
+          }
+          for (let i = feedPlaylistLength; i < numTracks; i++) {
+            setPrice(bcplayer._playlist._playlist[i].id);
           }
         }
       } else {
