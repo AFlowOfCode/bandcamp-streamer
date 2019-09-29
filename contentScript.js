@@ -637,15 +637,19 @@
     this._track = this.playlist._track;      
     this._position = this.playlist._position;
     this._duration = this.playlist._duration;
+    this._volume = this.playlist._player._html5player._volume;
     this._nextTrack = false;                  // evade bc's auto-reset & ensure correct track gets played
     this.handlerNextTrack = function() { return this.next() }.bind(this);
 
     this.$trackPlayWaypoint = bcplayer._waypoints[0];
+    // set initial volume
+    this.playlist._player.setvol(0.7);
 
     if (this.$trackPlayWaypoint) {
       this.$el = this.injectHtml();
       this.$position = this.$el.querySelector('#track_play_waypoints_controls_position');
       this.$duration = this.$el.querySelector('#track_play_waypoints_controls_duration');
+      this.$volume = this.$el.querySelector('#volume-value');
       this.observe();
       console.debug('[bandcampFeedPlaylist] injected');
     }
@@ -659,6 +663,7 @@
       { 'obj': this.playlist, prop: '_state', callback: this.onStateUpdate.bind(this) },
       { 'obj': this.playlist, prop: '_duration', callback: this.updateDuration.bind(this) },
       { 'obj': this.playlist, prop: '_position', callback: this.updatePosition.bind(this) },
+      { 'obj': this.playlist._player._html5player, prop: '_volume', callback:this.updateVolume.bind(this) }
     ];
 
     observers.map(observer => {
@@ -696,6 +701,24 @@
         e.preventDefault();
     }
     return this.playlist.prev_track();
+  }
+
+  FeedPlaylist.prototype.vol_down = function(e) {
+    if (e) e.preventDefault();
+    if (this._volume === 0) {
+      return;
+    } else {
+      return this.playlist._player.setvol(this._volume - 0.1);
+    }
+  }
+
+  FeedPlaylist.prototype.vol_up = function(e) {
+    if (e) e.preventDefault();
+    if (this._volume === 1) {
+      return;
+    } else {
+      return this.playlist._player.setvol(this._volume + 0.1);
+    }
   }
 
   FeedPlaylist.prototype.onStateUpdate = function(state) {
@@ -742,36 +765,72 @@
       return this.$duration.innerText = window.Time.timeStr(this._duration)
   }
 
+  FeedPlaylist.prototype.updateVolume = function() {
+    let vol = Math.round(this.playlist._player._html5player._volume * 100)  ;
+    return this.$volume.innerText = `Volume: ${vol}%`;
+  }
+
   FeedPlaylist.prototype.injectHtml = function() {
-    const container = document.createElement('div');
-    container.id = "track_play_waypoint_controls";
+    const container = document.createElement('div'),
+          wayContainer = document.createElement('div'),
+          posContainer = document.createElement('div'),
+          volContainer = document.createElement('div');
+    container.id = 'player-controls-container';
+    wayContainer.id = "track_play_waypoint_controls";
+    wayContainer.classList.add('player-controls');
+    posContainer.id = 'position-container';
+    volContainer.id = 'volume-container';
+    volContainer.classList.add('player-controls');
+
     const infos = [
         { text: "0:00", id: "track_play_waypoints_controls_position" },
         { text: "/" },
         { text: "0:00", id: "track_play_waypoints_controls_duration" },
+        { text: `Volume: ${Math.round(this.playlist._player._html5player._volume * 100)}%`, id: "volume-value", vol: true }
     ];
     const controls = [
         { text: 'Previous', action: this.previous.bind(this) },
         { text: 'Play/Pause', action: this.playpause.bind(this) },
-        { text: 'Next', action: this.next.bind(this) }
+        { text: 'Next', action: this.next.bind(this) },
+        { text: 'Decrease', action: this.vol_down.bind(this), vol: true },
+        { text: '/', noaction: true, vol: true },
+        { text: 'Increase', action: this.vol_up.bind(this), vol: true }
     ];
 
     infos.map(info => {
-        let element = document.createElement('span');
-        if (info.id) {
-            element.id = info.id;
-        }
-        element.innerText = info.text;
-        container.appendChild(element);
+      let element = document.createElement('span');
+      if (info.id) {
+          element.id = info.id;
+      }
+      element.innerText = info.text;
+      if (info.vol) {
+        volContainer.appendChild(element);
+      } else {
+        posContainer.appendChild(element);
+      }
     });
 
+    wayContainer.appendChild(posContainer);
+
     controls.map(control => {
-        let element = document.createElement('a');
+      let element;
+      if (control.noaction) {
+        element = document.createElement('span');
+      } else {
+        element = document.createElement('a');
         element.href = "#";
         element.innerText = control.text;
         element.addEventListener('click', control.action)
-        container.appendChild(element);
+      }        
+      if (control.vol) {
+        volContainer.appendChild(element);
+      } else {
+        wayContainer.appendChild(element);
+      }
     });
+
+    container.appendChild(wayContainer);
+    container.appendChild(volContainer);
 
     return this.$trackPlayWaypoint.parentElement.appendChild(container);
   }
