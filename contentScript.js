@@ -1,7 +1,14 @@
+/***************************
+  * BANDCAMP STREAMER      *
+  * by A Flow of Code      *
+  * github.com/aflowofcode *
+  **************************/
+
 (function(window, document) {
 
   const bcplayer = window.playerview,
         colplayer = window.collectionPlayer,
+        albumplayer = window.gplayerviews[0] ? window.gplayerviews[0]._playlist._player : false;
         jQuery = window.jQuery,
         pagedata = jQuery("#pagedata").data("blob");
 
@@ -15,6 +22,7 @@
     // on collection page & need to modify some of that player's functions + add shuffle
     replaceFunctions();
     addFunctions();
+    catchErrors(colplayer.player2._playlist._player._html5player, 'collection');
     // handle people loading on non wishlist or collection tabs (eg /followers)
     let tab = pagedata.active_tab;
     console.log('initial tab:', tab);
@@ -42,33 +50,38 @@
     } else {
       loadCollection(tab);
     }
+  } else {
+    catchErrors(bcplayer._playlist._player._html5player, 'feed');
   }
 
   /**********************************************************
-   ********** PLAYER FUNCTIONS ******************************
+   ********** COLLECTION PLAYER FUNCTIONS *******************
    **********************************************************/ 
 
   function replaceFunctions(){
     let self = colplayer.player2;
     self.setCurrentTrack = function(index) {
-      // console.log("index to set", index);
+      console.log("index to set", index);
       self.currentTrackIndex(index);
       let newTrack = self.currentTrack();
       if (!newTrack) return;
       let id = newTrack.itemId,
-          el = document.getElementById(newTrack.domId);
-      // console.log("domId:", newTrack.domId);
-      // console.log(newTrack, el);
+          el = document.getElementById(newTrack.domId),
+          itemKey = getItemKey(el);
+      console.log("domId:", newTrack.domId);
+      console.log(newTrack, el);
       togglePlayButtons(colplayer.lastEl, true);
       togglePlayButtons(el);
       colplayer.lastEl = el;
       self._playlist.load([newTrack.trackData]);
       self.duration(self._playlist.duration());
       setCurrentEl(el);
+      colplayer.currentItemKey(itemKey);
       return true;
     };
     // have to redo these because currentTrackIndex returns a STRING and orig code just tacked a 1 onto it
     // eg going from index 2 ended up with 21 instead of 3
+    // also want them to check if list needs updating before playing
     self.prev = function() {
       if (colplayer.pendingUpdate || colplayer.pendingWishUpdate) {
         updateTracklists(+self.currentTrackIndex() - 1);
@@ -132,7 +145,7 @@
             let shufTrack = shuffledAlbum.length === 1 ? shuffledAlbum[0] : 
                             shuffledAlbum[Math.floor(Math.random() * shuffledAlbum.length)];
             item.setAttribute('data-shufflenum', shufTrack);
-            // console.log('shuffled album:', a[shufTrack].title, 'chose:', shufTrack);
+            console.log('shuffled album:', a[shufTrack].title, 'chose:', shufTrack);
           });
           setCurrentEl(document.getElementById(a[0].domId));
         }
@@ -150,6 +163,28 @@
       }
     }
   }
+
+  // this catches errors that halt all playback and instead restarts the stream
+  // usually when this happens it's because the mp3 url has expired or changed.. example:
+  // GET https://bandcamp.com/stream_redirect?enc=mp3-128&track_id=2441814329&ts=1569574019&t=44bc84483037a3141cfe964490d1d29851e570ff 
+  // net::ERR_NAME_NOT_RESOLVED
+  // HTML5Player-1: got native error event; error.code=4
+  function catchErrors(player, page) {
+    // this needs to be the _html5player
+    // collection page: colplayer.player2._playlist._player._html5player
+    // feed page:       bcplayer._playlist._player._html5player
+    player._error = function(str) {
+      console.warn("Catching play error, trying to restart track. Error:",str);
+      if (page === 'collection') {
+        colplayer.player2.next();
+        colplayer.player2.prev();
+      } else {
+        feedPlayer.next();
+        feedPlayer.previous();
+      }      
+    }
+  }
+  
 
   /**********************************************************
    ********** COLLECTION FUNCTIONS **************************
@@ -170,19 +205,23 @@
     setCurrentEl(initEl);
 
     // check if user expands collection
-    observeTotal('collection', document.querySelector('#collection-items .collection-grid'));
-    observeTotal('wishlist', document.querySelector('#wishlist-items .collection-grid'));
+    let collectionGrid = document.querySelector('#collection-items .collection-grid'),
+        wishlistGrid = document.querySelector('#wishlist-items .collection-grid');
+    if (collectionGrid) observeTotal('collection', collectionGrid);
+    if (wishlistGrid) observeTotal('wishlist', wishlistGrid);
 
     // show transport on page load
     // but will stop any other currently playing tabs
     // colplayer.player2._playlist.play(); 
     // colplayer.player2._playlist.playpause(); 
+    
+    replaceClickHandlers();
+  }
 
+  function assignTransButtons() {
     // these get manipulated depending on play state
     colplayer.transPlay = document.querySelector('#collection-player .playpause .play');
     colplayer.transPause = document.querySelector('#collection-player .playpause .pause');
-    
-    replaceClickHandlers();
   }
 
   function buildPlaylists(index, isOwner) {
@@ -424,8 +463,17 @@
     });
   }
 
+  function getItemKey(item) {
+    let itemId = item.getAttribute("data-itemid"),
+        itemType = item.getAttribute("data-itemtype").slice(0, 1),
+        itemKey = itemType + itemId;
+    console.log('got item key', itemKey);
+    return itemKey;
+  }
+
   function playerHandler(ev) {
     ev.stopPropagation();
+    console.log('playing track itemkey:', colplayer.currentItemKey());
     let item = ev.target.closest(".collection-item-container"),
         grid = ev.target.closest(".collection-grid"),
         gridType = grid.getAttribute('data-ismain') === 'true' ? 'collection' :
@@ -445,13 +493,13 @@
                    item.getAttribute('data-firsttrack'),          
         tralbumId = item.getAttribute("data-tralbumid"),
         tralbumType = item.getAttribute("data-tralbumtype"),
-        itemId = item.getAttribute("data-itemid"),
-        itemType = item.getAttribute("data-itemtype").slice(0, 1),
-        itemKey = itemType + itemId;
+        itemKey = getItemKey(item);
+    console.log(`clicked on itemKey: ${itemKey}, is ${colplayer.currentItemKey()}?`, itemKey === colplayer.currentItemKey());
 
     if (item.classList.contains("no-streaming")) 
       return;
     if (itemKey === colplayer.currentItemKey()) {
+      console.log('item playpausing');
       // pausing / unpausing
       togglePlayButtons(item);
       // these just return true if they already ARE showing
@@ -460,6 +508,7 @@
       colplayer.player2.playPause();
       return;
     }
+    console.log('clicked on dif track, setting correct track');
     colplayer.player2.stop();
     if (colplayer.pendingUpdate || colplayer.pendingWishUpdate) updateTracklists();
     setCurrentEl(item); 
@@ -468,6 +517,7 @@
     colplayer.currentGridType(gridType);
     
     colplayer.player2.goToTrack(tracknum);
+    assignTransButtons(); // this should happen after first ever play on page
   }
 
   // Handle playing elements
@@ -483,20 +533,23 @@
     item.classList.toggle('playing');
 
     // if track is playing make sure transport shows pause
-    if (item.classList.contains('playing')) {
-      colplayer.transPause.style.display = 'inline-block';
-      colplayer.transPlay.style.display = 'none';
-    } else if (!offonly) {
-      colplayer.transPause.style.display = 'none';
-      colplayer.transPlay.style.display = 'inline-block';
+    if (colplayer.transPause) {
+      if (item.classList.contains('playing')) {
+        colplayer.transPause.style.display = 'inline-block';
+        colplayer.transPlay.style.display = 'none';
+      } else if (!offonly) {
+        colplayer.transPause.style.display = 'none';
+        colplayer.transPlay.style.display = 'inline-block';
+      }
     }
+    
   }
 
   /**********************************************************
    ********** FEED FUNCTIONS ********************************
    **********************************************************/
 
-  let originalPlaylist = bcplayer._playlist._playlist,
+  let originalPlaylist = bcplayer ? bcplayer._playlist._playlist : '',
       feedPlaylist = [],
       feedPlaylistLength,
       releasePlaylist = [],
@@ -523,7 +576,7 @@
     // (since they did not intend this to play through automatically)
     for (let i = 0; i < originalPlaylist.length; i++) {
       let origId = originalPlaylist[i].id.toString();
-      // console.log(`index ${i} origId ${origId}`);
+      console.log(`index ${i} origId ${origId}`);
       if (feedTracks.indexOf(origId) != -1) {
         let dupes = false,
             timesInArray = countInArray(feedTracks, origId),
@@ -674,7 +727,7 @@
       // resetting _nextTrack to false on click
       // TODO: deal with that later if it seems to be an issue
       this._nextTrack = +this._track + 1;
-      // console.log('set force track:',+this._nextTrack);
+      console.log('set force track:',+this._nextTrack);
       this.playlist.play_track(+this._track + 1);
     }
     return;
@@ -727,7 +780,7 @@
     let price = {};
     for (let i = 0; i < pagedata.track_list.length; i++) {
       if (pagedata.track_list[i].id == id) {
-        // console.log(i, pagedata.track_list[i]);
+        console.log(i, pagedata.track_list[i]);
         price.unit = pagedata.track_list[i].currency === 'USD' ? '$' : 
                      pagedata.track_list[i].currency === 'EUR' ? '€' :
                      pagedata.track_list[i].currency === 'GBP' ? '£' :
@@ -764,10 +817,8 @@
         trackCollection = [];
     for (let i = 0; i < entries.length; i++) {
       let track = entries[i].getAttribute('data-trackid');
-          // tracknum = entries[i].getAttribute('data-tracknum');
       if (track !== '') {
           trackCollection.push(track);
-          // console.log('trackid:',track,'tracknum',tracknum);
       } else {
         console.log('got a story with no track');
       }
@@ -977,6 +1028,13 @@
       console.log('detected playlist expansion');
       let numTracks;
       if (page === 'feed') {
+        // playerview._playlist._track changes right away to one from the next batch (doesn't stay as what is currently playing)
+        // this is incorrect
+        // playerview._playlist.first_playable_track is also changing to that
+        let currentIndex = bcplayer._playlist._loadedtrack;
+        console.log('current track index playing', currentIndex);
+        feedPlayer._nextTrack = currentIndex + 1;
+        console.log('set force track (expansion):',feedPlayer._nextTrack);
         // not all stories are playable tracks
         numTracks = document.querySelectorAll('.story-innards .track_play_auxiliary').length;
         if (numTracks > feedPlaylistLength) {
@@ -1030,7 +1088,7 @@
         }
         
       }
-      console.log(`there are now ${numTracks} playable tracks in feed (minus any dead tracks)`);    
+      // console.log(`there are now ${numTracks} playable tracks in feed (minus any dead tracks)`, bcplayer._playlist._playlist);    
     });
     observer.observe(parent, options);
   }
@@ -1045,4 +1103,29 @@
 
   // init feed player
   const feedPlayer = bcplayer ? new FeedPlaylist() : false;   
+
+  // bind spacebar to playpause
+  // this should be an option to enable
+  // browsers auto scroll down w/ spacebar press, which some people may like
+  document.addEventListener('keydown', (e) => {
+    if (e.code === 'Space' && e.target == document.body) {
+      e.preventDefault();
+      console.log('no scrolling');
+    }
+  });
+  document.addEventListener('keyup', (e) => {
+    // console.log("key pressed", e.code);
+    if (e.code === 'Space' && e.target == document.body) {
+      if (bcplayer !== undefined) {
+        console.log('feed', bcplayer)
+        feedPlayer.playpause();
+      } else if (colplayer !== undefined) {
+        console.log('col', colplayer);
+        colplayer.player2.playPause();
+      } else if (albumplayer !== undefined) {
+        console.log('album/track',albumplayer); 
+        albumplayer.playpause();
+      }
+    }
+  });
 })(window, document);
