@@ -31,9 +31,11 @@
           collectionTab = document.querySelector('#grid-tabs > li[data-tab=collection]'),
           tabClicked = function (e) {
             e.stopPropagation();
-            let targetTab = false;
-            for (let i = 0; i < e.path.length; i++) {
-              if (e.path[i].id === 'wishtab') {
+            let targetTab = false,
+                epath = e.path || e.composedPath();
+            console.log(e);
+            for (let i = 0; i < epath.length; i++) {
+              if (epath[i].id === 'wishtab') {
                 targetTab = 'wishlist';
                 break;
               }
