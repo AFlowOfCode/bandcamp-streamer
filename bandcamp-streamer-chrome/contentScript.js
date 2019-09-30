@@ -1092,10 +1092,12 @@
         // playerview._playlist._track changes right away to one from the next batch (doesn't stay as what is currently playing)
         // this is incorrect
         // playerview._playlist.first_playable_track is also changing to that
-        let currentIndex = bcplayer._playlist._loadedtrack;
-        console.log('current track index playing', currentIndex);
-        feedPlayer._nextTrack = currentIndex + 1;
-        console.log('set force track (expansion):',feedPlayer._nextTrack);
+        if (currentList === 'feed') {
+          let currentIndex = +bcplayer._playlist._loadedtrack;
+          console.log('current track index playing', currentIndex);
+          feedPlayer._nextTrack = currentIndex + 1;
+          console.log('set force track (expansion):',feedPlayer._nextTrack);
+        }        
         // not all stories are playable tracks
         numTracks = document.querySelectorAll('.story-innards .track_play_auxiliary').length;
         if (numTracks > feedPlaylistLength) {
