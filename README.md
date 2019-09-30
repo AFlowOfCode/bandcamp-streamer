@@ -1,5 +1,5 @@
-# Bandcamp Streamer Extension 
-Chrome & Firefox
+# Bandcamp Streamer
+Browser extension for Chrome & Firefox developed by A Flow of Code. Special acknowledgement to [lovethebomb](https://github.com/lovethebomb/) for the initial feed player class.
 
 ### Stream uninterrupted from various bandcamp pages
   * Feed
@@ -7,7 +7,7 @@ Chrome & Firefox
   * Any other fan's collection / wishlist
       
 ### Feed page features 
-  * Nonstop streaming from 2 separate playlists: Fan activity or new releases
+  * Nonstop streaming from 2 separate playlists: fan activity or new releases
   * Price listed next to "buy now"
   * Volume control
   
@@ -15,6 +15,9 @@ Chrome & Firefox
   * Stream full albums continuously (moves onto next album after finishing) 
   * Stream a playlist of your favorite track from each release (plays first track from album if favorite not set)
   * Shuffle either album or favorites playlist 
+
+### Known issues
+  * New stories added from the top while the feed page is loaded are not placed at the beginning of the playlist. If you want to hear them in order, just reload the page.
 
 
 ## Trademarks
