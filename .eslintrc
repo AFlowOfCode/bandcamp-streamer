@@ -1,9 +1,0 @@
-{
-    "extends": "eslint:recommended",
-    "env": {
-        "browser": true
-    },
-    "globals": {
-        "chrome": true
-    }
-}
