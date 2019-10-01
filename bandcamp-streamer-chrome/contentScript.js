@@ -846,7 +846,9 @@
                      pagedata.track_list[i].currency === 'EUR' ? '€' :
                      pagedata.track_list[i].currency === 'GBP' ? '£' :
                      pagedata.track_list[i].currency;
-        price.cost = pagedata.track_list[i].price === 0 ? '0+' : pagedata.track_list[i].price.toString();
+        price.cost = pagedata.track_list[i].price === null ? '?' : 
+                     pagedata.track_list[i].price === 0 ? '0+' : 
+                     pagedata.track_list[i].price.toString();
         break;
       }
     }
