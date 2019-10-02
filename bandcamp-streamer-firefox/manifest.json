@@ -1,7 +1,7 @@
 {
     "name": "Bandcamp Streamer",
     "version": "1.0",
-    "description": "Continously stream from Bandcamp fan feed & collection pages",
+    "description": "Continuously stream from Bandcamp fan feed & collection pages",
     "content_scripts": [
         {
             "matches": [
