@@ -45,3 +45,15 @@
     bottom: 48px !important;
     opacity: 1 !important;
 }
+
+/* collection page */
+
+#playlist-header {
+    font-weight: 600;
+}
+
+#shuffler {
+    margin-left:10px; 
+    font-size:0.7em; 
+    cursor: pointer;
+}

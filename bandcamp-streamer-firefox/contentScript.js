@@ -374,10 +374,18 @@
       let switcher = document.createElement('a'),
           parent = document.querySelector('#collection-player .controls-extra'),
           startList = colplayer.isOwner ? 'albums' : 'favorites',
-          header = `<span id="playlist-header" style="font-weight:600;">${startList}</span>`,
-          shuffle = '<span id="shuffler" style="margin-left:10px; font-size:0.7em; cursor: pointer;">(shuffle!)</span>';
+          header = document.createElement('span'),
+          shuffle = document.createElement('span');
 
-      queueHeader.innerHTML = colplayer.isOwner ? `now playing ${header} ${shuffle}` : `now playing ${header}`;
+      header.id = 'playlist-header';
+      header.style.fontWeight = 600;
+      header.innerText = startList;
+      shuffle.id = 'shuffler';
+      shuffle.innerText = '(shuffle!)';
+          
+      queueHeader.innerText = 'now playing ';
+      queueHeader.appendChild(header);
+      if (colplayer.isOwner) queueHeader.appendChild(shuffle);
 
       // only owners have full albums & can shuffle
       if (colplayer.isOwner) {
@@ -433,7 +441,7 @@
     console.log('updating queue to # titles', titles.length);
     let queue = document.querySelectorAll('.queue li > .info');
     queue.forEach(function(item, index){
-      item.innerHTML = `${index+1}. ${titles[index]}`;
+      item.innerText = `${index+1}. ${titles[index]}`;
     });
   }
 
