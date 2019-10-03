@@ -2,6 +2,7 @@
 Browser extension for Chrome & Firefox developed by A Flow of Code. Special acknowledgement to [lovethebomb](https://github.com/lovethebomb/) for the initial feed player class.
 
 Chrome: [https://chrome.google.com/webstore/detail/bandcamp-streamer/hopclencgmfjiipjmlenfcdgcdblfmjh](https://chrome.google.com/webstore/detail/bandcamp-streamer/hopclencgmfjiipjmlenfcdgcdblfmjh)
+
 Firefox: [https://addons.mozilla.org/en-US/firefox/addon/bandcamp-streamer/](https://addons.mozilla.org/en-US/firefox/addon/bandcamp-streamer/)
 
 ### Stream uninterrupted from various bandcamp pages
