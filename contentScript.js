@@ -256,8 +256,11 @@
         track = colplayer.tracklists.collection[key] ? colplayer.tracklists.collection[key][0] : false;
       }
 
+      // trackData.title is null when an item has no streamable track
+      let canPush = track && track.trackData.title !== null;
+
       // build collection playlist
-      if (track && track.trackData.title !== null) {        
+      if (canPush) {        
         console.log(`pushing ${track.trackData.artist} - ${track.trackData.title}`);
         track.itemId = id;
         track.domId = domId;
@@ -268,7 +271,7 @@
         console.log(`couldn't find playable track for item ${key}`, colplayer.tracklists.collection[key]);
       }
       // build album playlist 
-      if (isOwner) {
+      if (isOwner && canPush) {
         let album = colplayer.tracklists.collection[key];
         items[i].setAttribute('data-firsttrack', albumPlaylist.length);
         if (album.length >= 1) {
@@ -1001,6 +1004,7 @@
 
   function switchLists(list) {
     if (list === currentList) {
+      console.log(`still on same playlist`);
       return;
     } else if (list === 'release') {
       // save the current feed playlist (it's possible new tracks were added by scrolling)
