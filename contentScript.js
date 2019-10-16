@@ -250,20 +250,22 @@
           console.log('found fave track');
           track = colplayer.tracklists.collection[key][+node.href.slice(node.href.indexOf('?t=') + 3) - 1];
         } else {
-          track = colplayer.tracklists.collection[key][0];
+          track = colplayer.tracklists.collection[key] ? colplayer.tracklists.collection[key][0] : false;
         } 
       } else {
-        track = colplayer.tracklists.collection[key][0];
+        track = colplayer.tracklists.collection[key] ? colplayer.tracklists.collection[key][0] : false;
       }
 
       // build collection playlist
-      if (track) {        
+      if (track && track.trackData.title !== null) {        
         console.log(`pushing ${track.trackData.artist} - ${track.trackData.title}`);
         track.itemId = id;
         track.domId = domId;
         collectionPlaylist.push(track);
         queueTitles.push(`${track.trackData.artist} - ${track.trackData.title}`);
         items[i].setAttribute('data-tracknum', i);
+      } else {
+        console.log(`couldn't find playable track for item ${key}`, colplayer.tracklists.collection[key]);
       }
       // build album playlist 
       if (isOwner) {
