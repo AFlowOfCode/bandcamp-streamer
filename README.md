@@ -21,7 +21,7 @@ Firefox: [https://addons.mozilla.org/en-US/firefox/addon/bandcamp-streamer/](htt
   * Shuffle either album or favorites playlist 
 
 ### Known issues
-  * New stories added from the top while the feed page is loaded are not placed at the beginning of the playlist. If you want to hear them in order, just reload the page.
+  * New stories added from the top while the feed page is loaded are not added to the playlist. If you want to hear them, just reload the page.
 
 
 ## Trademarks
