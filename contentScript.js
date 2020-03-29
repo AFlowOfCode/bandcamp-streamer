@@ -580,6 +580,9 @@
         addedToFeed = [],
         feedDuplicates = {};
 
+    console.log('feed track ids:', feedTracks);
+    console.log('release track ids:', releaseTracks);
+
 
     // going to replace default playlist with filtered playlist
     bcplayer._playlist.unload();
@@ -588,6 +591,7 @@
     // if track shows up in both feed and new release, it messes up the order of the original playlist
     // by default, after 7 or 8 tracks it jumps to new releases 
     // (since they did not intend this to play through automatically)
+    console.log('Sorting playlists');
     for (let i = 0; i < originalPlaylist.length; i++) {
       let origId = originalPlaylist[i].id.toString();
       console.log(`index ${i} origId ${origId}`);
@@ -622,22 +626,31 @@
         }
         // add it to release 
         if (releaseTracks.indexOf(origId) != -1) {
-          releasePlaylist.push(originalPlaylist[i]);
+          console.log('track in both feed & release');
+          addToReleasePlaylist(releaseTracks.indexOf(origId), originalPlaylist[i]);
         }
       } else if (releaseTracks.indexOf(origId) != -1) {
-        releasePlaylist.push(originalPlaylist[i]);
-        console.log(`release: added ${originalPlaylist[i].title}, tracknum ${originalPlaylist[i].tracknum} to slot ${i}`);
-        setPrice(originalPlaylist[i].id);
+        addToReleasePlaylist(releaseTracks.indexOf(origId), originalPlaylist[i]);
       } else {
         // track is in playlist but not yet on page, so we don't need it right now
       }
     }
+
+    // ensure release list is in the right order
+    function addToReleasePlaylist(index, track) {
+      releasePlaylist[index] = track;
+      console.log(`release: added ${track.title}, tracknum ${track.tracknum} to slot ${index}`);
+      setPrice(track.id);
+    }
     // 10 feed stories loaded by default, but could change on whims of bandcamp
     // reference this to determine when tracks are added by scrolling
     feedPlaylistLength = bcplayer._playlist.length();
+    console.log(`Feed has ${feedPlaylistLength} tracks to start with`);
     console.log('initial feed playlist:',bcplayer._playlist._playlist);
     // reference this in case any tracks added via scrolling while release list is playing
     releasePlaylistLength = releasePlaylist.length;
+    console.log('initial release playlist:', releasePlaylist, releasePlaylistLength);
+
 
     // this needs to be done every time new tracks are loaded at bottom 
     // or won't be able to click on newly added tracks (they'd still work via the player prev/next buttons)
