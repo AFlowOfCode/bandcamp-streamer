@@ -1,3 +1,7 @@
+<div align="center">
+<img src='bandcamp-streamer.jpg?raw=true' alt='promo image'>
+</div>
+
 # Bandcamp Streamer
 Browser extension for Chrome & Firefox developed by A Flow of Code. Special acknowledgement to [lovethebomb](https://github.com/lovethebomb/) for the initial feed player class.
 
