@@ -8,7 +8,7 @@
 
   const bcplayer = window.playerview,
         colplayer = window.collectionPlayer,
-        albumplayer = window.gplayerviews[0] ? window.gplayerviews[0]._playlist._player : false;
+        albumplayer = window.gplayerviews[0] ? window.gplayerviews[0]._playlist._player : false,
         jQuery = window.jQuery,
         pagedata = jQuery("#pagedata").data("blob");
 
@@ -163,8 +163,8 @@
         colplayer.isShuffled = false;
         el.innerText = '(shuffle!)';      
       }
-    }
-  }
+    }; // colplayer.shuffle()
+  } // addFunctions()
 
   // this catches errors that halt all playback and instead restarts the stream
   // usually when this happens it's because the mp3 url has expired or changed.. example:
@@ -196,9 +196,9 @@
     colplayer.isOwner = document.getElementById('fan-banner').classList.contains('owner');
     colplayer.collectionLength = 0; //window.CollectionData.sequence.length;
     colplayer.wishlistLength = 0; //window.WishlistData.sequence.length;
-    colplayer.initialTab = tab,
-    colplayer.currentTab = tab,
-    colplayer.collectionBuilt = false,
+    colplayer.initialTab = tab;
+    colplayer.currentTab = tab;
+    colplayer.collectionBuilt = false;
     colplayer.wishBuilt = false;
 
     console.log(`clicked on ${tab} first`);
@@ -510,8 +510,7 @@
         itemKey = getItemKey(item);
     console.log(`clicked on itemKey: ${itemKey}, is ${colplayer.currentItemKey()}?`, itemKey === colplayer.currentItemKey());
 
-    if (item.classList.contains("no-streaming")) 
-      return;
+    if (item.classList.contains("no-streaming")) return;
     if (itemKey === colplayer.currentItemKey()) {
       console.log('item playpausing');
       // pausing / unpausing
@@ -540,7 +539,7 @@
     // if playing a new track, turn off prev button first
     if(!item) return;
     if (!item.classList.contains('playing')) {
-      let prev = document.querySelector('.collection-item-container.playing')
+      let prev = document.querySelector('.collection-item-container.playing');
       if (prev) prev.classList.remove('playing');
     }
 
@@ -651,7 +650,6 @@
     releasePlaylistLength = releasePlaylist.length;
     console.log('initial release playlist:', releasePlaylist, releasePlaylistLength);
 
-
     // this needs to be done every time new tracks are loaded at bottom 
     // or won't be able to click on newly added tracks (they'd still work via the player prev/next buttons)
     bindPlayButtons();      
@@ -665,7 +663,8 @@
     this._position = this.playlist._position;
     this._duration = this.playlist._duration;
     this._volume = this.playlist._player._html5player._volume;
-    this._nextTrack = false;                  // evade bc's auto-reset & ensure correct track gets played
+    // evade bc's auto-reset & ensure correct track gets played
+    this._nextTrack = false;                  
     this.handlerNextTrack = function() { return this.next() }.bind(this);
 
     this.$trackPlayWaypoint = bcplayer._waypoints[0];
@@ -686,18 +685,18 @@
   FeedPlaylist.prototype.observe = function(e) {
     const self = this;
     const observers = [
-      { 'obj': this.playlist, prop: '_track' },
-      { 'obj': this.playlist, prop: '_state', callback: this.onStateUpdate.bind(this) },
-      { 'obj': this.playlist, prop: '_duration', callback: this.updateDuration.bind(this) },
-      { 'obj': this.playlist, prop: '_position', callback: this.updatePosition.bind(this) },
-      { 'obj': this.playlist._player._html5player, prop: '_volume', callback:this.updateVolume.bind(this) }
+      { obj: this.playlist, prop: '_track' },
+      { obj: this.playlist, prop: '_state', callback: this.onStateUpdate.bind(this) },
+      { obj: this.playlist, prop: '_duration', callback: this.updateDuration.bind(this) },
+      { obj: this.playlist, prop: '_position', callback: this.updatePosition.bind(this) },
+      { obj: this.playlist._player._html5player, prop: '_volume', callback:this.updateVolume.bind(this) }
     ];
 
     observers.map(observer => {
       Object.defineProperty(observer.obj, observer.prop, {
         get: function() { return self[observer.prop]; },
         set: function(newValue) {
-          if (newValue === self[observer.prop]) { return }
+          if (newValue === self[observer.prop]) return; 
           self[observer.prop] = newValue;
           if (typeof observer.callback == 'function') {
               return observer.callback(newValue);
@@ -781,21 +780,21 @@
       this.playlist.play_track(+this._track + 1);
     }
     return;
-  }
+  }; // FeedPlaylist.prototype.onStateUpdate
 
   // DOM
   FeedPlaylist.prototype.updatePosition = function() {
-      return this.$position.innerText = window.Time.timeStr(this._position)
-  }
+      return this.$position.innerText = window.Time.timeStr(this._position);
+  };
 
   FeedPlaylist.prototype.updateDuration = function() {
-      return this.$duration.innerText = window.Time.timeStr(this._duration)
-  }
+      return this.$duration.innerText = window.Time.timeStr(this._duration);
+  };
 
   FeedPlaylist.prototype.updateVolume = function() {
-    let vol = Math.round(this.playlist._player._html5player._volume * 100)  ;
+    let vol = Math.round(this.playlist._player._html5player._volume * 100);
     return this.$volume.innerText = `Volume: ${vol}%`;
-  }
+  };
 
   FeedPlaylist.prototype.injectHtml = function() {
     const container = document.createElement('div'),
@@ -1103,10 +1102,6 @@
   /**********************************************************
    ********** SHARED FUNCTIONS ******************************
    **********************************************************/ 
-
-  function countInArray(array, value) {
-    return array.reduce((n, x) => n + (x === value), 0);
-  }
 
   function observeTotal(page, parent) {
     console.log('setting up observer on', parent);
