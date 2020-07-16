@@ -79,6 +79,7 @@
       self.duration(self._playlist.duration());
       setCurrentEl(el);
       colplayer.currentItemKey(itemKey);
+      window.document.title = window.originalTitle + ` | ${self.currentTrack().trackTitle} by ${self.currentTrack().trackData.artist}`;
       return true;
     };
     // have to redo these because currentTrackIndex returns a STRING and orig code just tacked a 1 onto it
@@ -571,6 +572,9 @@
       pausedTrack,
       nowPlaying = document.getElementById('track_play_waypoint');
 
+  // record original document title for updating with track/artist
+  window.originalTitle = window.document.title;
+
   function FeedPlaylist() {
       
     // build playlists
@@ -670,7 +674,7 @@
     this.$trackPlayWaypoint = bcplayer._waypoints[0];
     // set initial volume
     this.playlist._player.setvol(0.7);
-
+    
     if (this.$trackPlayWaypoint) {
       this.$el = this.injectHtml();
       this.$position = this.$el.querySelector('#track_play_waypoints_controls_position');
@@ -749,7 +753,7 @@
 
   FeedPlaylist.prototype.onStateUpdate = function(state) {
     console.log("onStateUpdate:", state, "track:", this._track);
-
+    this.updateTitle();
     // on very first play (which will be first state update) set the "now playing / last played" visible permanently
     // if set before first play, appears broken (has no img until something is loaded)
     if (!nowPlaying.classList.contains('stream-activated')) nowPlaying.classList.add('stream-activated');
@@ -781,6 +785,12 @@
     }
     return;
   }; // FeedPlaylist.prototype.onStateUpdate
+
+  FeedPlaylist.prototype.updateTitle = function() {
+    const trackTitle = document.querySelector('#track_play_waypoint .waypoint-item-title').textContent,
+          trackArtist = document.querySelector('#track_play_waypoint .waypoint-artist-title').textContent;
+    window.document.title = window.originalTitle + ` | ${trackTitle} ${trackArtist}`;
+  }
 
   // DOM
   FeedPlaylist.prototype.updatePosition = function() {
@@ -1200,17 +1210,51 @@
     }
   });
   document.addEventListener('keyup', (e) => {
-    // console.log("key pressed", e.code);
-    if (e.code === 'Space' && e.target == document.body) {
+    let controlKey = false;
+    if (e.code === 'Space' || e.code === 'ArrowLeft' || e.code === 'ArrowRight') {
+      controlKey = true;
+    }
+    if (controlKey && e.target == document.body) {
       if (bcplayer !== undefined) {
-        console.log('feed', bcplayer)
-        feedPlayer.playpause();
+        // console.log('feed', bcplayer)
+        switch(e.code) {
+          case 'Space':
+            feedPlayer.playpause();
+            break;
+          case 'ArrowLeft':
+            feedPlayer.previous();
+            break;
+          case 'ArrowRight':
+            feedPlayer.next();
+            break;
+        }
       } else if (colplayer !== undefined) {
-        console.log('col', colplayer);
-        colplayer.player2.playPause();
+        // console.log('col', e.code, colplayer);
+        switch(e.code) {
+          case 'Space':
+            colplayer.player2.playPause();
+            break;
+          case 'ArrowLeft':
+            colplayer.player2.prev();
+            break;
+          case 'ArrowRight':
+            colplayer.player2.next();
+            break;
+        }
       } else if (albumplayer !== undefined) {
-        console.log('album/track',albumplayer); 
-        albumplayer.playpause();
+        // console.log('album/track',albumplayer); 
+        switch(e.code) {
+          case 'Space':
+            albumplayer.playpause();
+            break;
+          // Album player has different mechanism of switching tracks
+          case 'ArrowLeft':
+            // albumplayer.prev();
+            break;
+          case 'ArrowRight':
+            // albumplayer.next();
+            break;
+        }
       }
     }
   });
