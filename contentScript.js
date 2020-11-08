@@ -15,6 +15,11 @@
   // some useful functions
   // colplayer.player2.currentTrackIndex();
   // colplayer.player2.currentTracklist();
+  // colplayer.player2.currentState();
+  // "idle", "paused", "playing"
+  // colplayer.player2.showPlay(); 
+  // true if play button showing (means not playing)
+
   // list all access keys & track titles in console
   // for (key in colplayer.tracklists.collection) {console.log(`${key}: ${colplayer.tracklists.collection[key][0].trackTitle}`);}
 
@@ -104,6 +109,7 @@
   }
 
   function addFunctions(){
+    // shuffle playlist
     colplayer.shuffle = function () {
       colplayer.player2.stop();
       if (!colplayer.isShuffled) {
@@ -124,7 +130,7 @@
         colplayer.player2.setTracklist(a);
         let firstTrackEl;
         // allow clicking on item to play appropriate track from shuffle list 
-        // need to do version of this for albums
+        // todo: version of this for albums
         if (colplayer.currentPlaylist === 'favorites' || colplayer.currentPlaylist === 'wish') {
           a.forEach((track, i) => {
             let id = track.itemId,
@@ -154,10 +160,15 @@
         }
         setQueueTitles(shufQueue);
       } else {
-        let unshuffled = colplayer.currentPlaylist === 'albums' ? colplayer.albumPlaylist    : colplayer.collectionPlaylist,
-            regQueue =   colplayer.currentPlaylist === 'albums' ? colplayer.albumQueueTitles : colplayer.queueTitles,
-            el =         document.getElementById('shuffler');
+        let unshuffled = colplayer.currentPlaylist === 'albums' ? colplayer.albumPlaylist 
+                       : colplayer.currentPlaylist === 'wish' ? colplayer.wishPlaylist 
+                       : colplayer.collectionPlaylist,
+            regQueue   = colplayer.currentPlaylist === 'albums' ? colplayer.albumQueueTitles 
+                       : colplayer.currentPlaylist === 'wish' ? colplayer.wishQueueTitles
+                       : colplayer.queueTitles,
+            el         = document.getElementById('shuffler');
 
+        console.log('unshuffling');
         colplayer.player2.setTracklist(unshuffled);
         setQueueTitles(regQueue);
         setCurrentEl(document.getElementById(unshuffled[0].domId));
@@ -212,6 +223,8 @@
         wishlistGrid = document.querySelector('#wishlist-items .collection-grid');
     if (collectionGrid) observeTotal('collection', collectionGrid);
     if (wishlistGrid) observeTotal('wishlist', wishlistGrid);
+
+    colplayer.show(true);
 
     // show transport on page load
     // but will stop any other currently playing tabs
@@ -324,7 +337,7 @@
 
   // items aren't loaded until user clicks wishlist tab (or loads on /wishlist)
   function buildWishPlaylist(index) {
-    console.log('building wish playlist');
+    console.log('building wish playlist, index:', index);
     let wishItems = document.querySelectorAll('#wishlist-items .track_play_hilite'),
         wishPlaylist =       index === 0 ? [] : colplayer.wishPlaylist.slice(),
         wishQueueTitles =    index === 0 ? [] : colplayer.wishQueueTitles.slice();
@@ -358,10 +371,16 @@
       playlistSwitcher(true,'wish');
       setQueueTitles(wishQueueTitles);
     } else {
-      console.log('wishlist pending update');
-      colplayer.pendingWishUpdate = true;
+      if (colplayer.player2.showPlay()) {
+        colplayer.player2.setTracklist(wishPlaylist);      
+        setQueueTitles(wishQueueTitles);        
+      } else {
+        console.log('wishlist pending update');
+        let status = document.querySelector('#playlist-status');
+        status.innerText = '(pending update)';
+        colplayer.pendingWishUpdate = true;
+      }  
     }
-
     replaceClickHandlers();  
     return wishItems[0];
   }
@@ -378,6 +397,7 @@
     let queueHeader = document.querySelector('.queue-header h2');
     if (init) {
       let switcher = document.createElement('a'),
+          status = document.createElement('p'),
           parent = document.querySelector('#collection-player .controls-extra'),
           startList = colplayer.isOwner ? 'albums' : 'favorites',
           header = document.createElement('span'),
@@ -387,9 +407,16 @@
       header.innerText = startList;
       shuffle.id = 'shuffler';
       shuffle.innerText = '(shuffle!)';
+
+      status.id = 'playlist-status';
+      status.title = 'the playlist will update between tracks to preserve continuity and avoid disrupting the currently playing track';
+      status.style.marginTop = '0';
+      status.style.marginRight = '10px';
           
       queueHeader.innerText = 'now playing ';
       queueHeader.appendChild(header);
+
+      // only shuffle own collection & wishlist
       if (colplayer.isOwner) queueHeader.appendChild(shuffle);
 
       // only owners have full albums & can shuffle
@@ -400,6 +427,7 @@
         switcher.style.marginRight = '10px';
         switcher.innerText = 'Switch to favorite tracks';
         parent.prepend(switcher);
+        parent.prepend(status);
         switcher.addEventListener('click', () => playlistSwitcher());
         document.getElementById('shuffler').addEventListener('click', () => colplayer.shuffle());
       }
@@ -417,7 +445,7 @@
         colplayer.currentPlaylist = 'wish';
         header.innerText = 'wishlist';
         if (colplayer.isOwner) {
-          shuffler.style.display = 'none'; // no shuffle on wishlist
+          // shuffler.style.display = 'none'; // no shuffle on wishlist
           switcher.innerText = '';
         }
       } else {        
@@ -452,6 +480,9 @@
 
   function updateTracklists(num) {
     console.log('updating tracklist while nothing is playing');
+    let status = document.querySelector('#playlist-status');
+    status.innerText = '';
+
     if (colplayer.pendingUpdate) {
       colplayer.player2.setTracklist(colplayer.collectionPlaylist);
       setQueueTitles(colplayer.queueTitles);
@@ -522,7 +553,7 @@
       colplayer.player2.playPause();
       return;
     }
-    console.log('clicked on dif track, setting correct track');
+    console.log('clicked on dif track, setting correct track', item);
     colplayer.player2.stop();
     if (colplayer.pendingUpdate || colplayer.pendingWishUpdate) updateTracklists();
     setCurrentEl(item); 
