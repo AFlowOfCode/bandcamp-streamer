@@ -1,7 +1,7 @@
 {
     "name": "Bandcamp Streamer",
     "version": "1.2.0",
-    "description": "Continuously stream from Bandcamp fan feed, collection, & wishlist pages without having to click play over and over, shuffle your own collection & wishlist, + other cool features.",
+    "description": "Continuously stream from Bandcamp feed, collection, & wishlist pages without clicking play over and over, + other cool features.",
     "permissions": [
         "https://bandcamp.com/*/feed",
         "https://bandcamp.com/*",
