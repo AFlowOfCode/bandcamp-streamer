@@ -1,6 +1,7 @@
 import { setQueueTitles, updateTracklists } from './profile.js';
 
 export function replaceFunctions(colplayer){
+  console.log('replacing functions');
   let self = colplayer.player2;
   self.setCurrentTrack = function(index) {
     console.log("index to set", index);

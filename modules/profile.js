@@ -335,10 +335,12 @@ function playerHandler(ev) {
   if (itemKey === colplayer.currentItemKey()) {
     console.log('item playpausing');
     // pausing / unpausing
-    togglePlayButtons(item);
-    // these just return true if they already ARE showing
-    // colplayer.player2.showPlay();
-    // colplayer.player2.showPause();
+    if (colplayer.isShuffled) {
+      // if current index matches artwork's index, this is a false positive
+      colplayer.player2.setCurrentTrack(tracknum);
+    } else {
+      togglePlayButtons(item);
+    }
     colplayer.player2.playPause();
     return;
   }
