@@ -104,12 +104,19 @@ export function buildPlaylists(index, isOwner) {
       colplayer.player2.setTracklist(albumPlaylist);
       colplayer.currentPlaylist = 'albums';
     } else {
+      console.log('collection pending update');
       colplayer.pendingUpdate = true;
     }
     // these have to be available for playlistSwitcher
     colplayer.albumPlaylist = albumPlaylist;
-    colplayer.albumQueueTitles = albumQueueTitles;     
-    setQueueTitles(albumQueueTitles);
+    colplayer.albumQueueTitles = albumQueueTitles;
+    if (colplayer.currentPlaylist === 'wish' && !colplayer.player2.showPlay()) {
+      // don't change the queue
+      console.log('not changing queue yet');
+    } else {
+      setQueueTitles(albumQueueTitles);
+    }
+    
   } else {
     if (colplayer.player2.showPlay()) {
       console.log("not playing:", colplayer.player2.showPlay());
@@ -126,7 +133,15 @@ export function buildPlaylists(index, isOwner) {
   colplayer.collectionLength = items.length;
 
   // allow switching between full albums & favorite tracks
-  if (index === 0 && colplayer.player2.showPlay()) playlistSwitcher(true); 
+  if (index === 0 && colplayer.player2.showPlay()) {
+    playlistSwitcher(true); // runs init
+    // always switch playlists if nothing played yet & tab clicked
+    window.collectionTab.addEventListener('click', () => {
+      if (colplayer.player2.showPlay()) {
+        playlistSwitcher(false, 'collection');
+      }
+    });
+  }
 
   replaceClickHandlers();  
   return items[0];
@@ -168,9 +183,16 @@ export function buildWishPlaylist(index) {
     playlistSwitcher(true,'wish');
     setQueueTitles(wishQueueTitles);
   } else {
+    if (index === 0) {
+      window.wishTab.addEventListener('click', () => {
+        if (colplayer.player2.showPlay()) {
+          playlistSwitcher(false, 'wish');
+        }
+      });
+    }
     if (colplayer.player2.showPlay()) {
-      colplayer.player2.setTracklist(wishPlaylist);      
-      setQueueTitles(wishQueueTitles);        
+      // wish not loaded first, nothing playing
+      playlistSwitcher(false, 'wish');       
     } else {
       console.log('wishlist pending update');
       let status = document.querySelector('#playlist-status');
@@ -225,7 +247,7 @@ function playlistSwitcher(init, switchTo) {
     if (switchTo === 'wish') {
       // init was sent from wish tab
       playlistSwitcher(false, 'wish');
-    }
+    } 
   } else {
     let switcher = document.getElementById('playlist-switcher'),
         header = document.getElementById('playlist-header'),
@@ -334,13 +356,7 @@ function playerHandler(ev) {
   if (item.classList.contains("no-streaming")) return;
   if (itemKey === colplayer.currentItemKey()) {
     console.log('item playpausing');
-    // pausing / unpausing
-    if (colplayer.isShuffled) {
-      // if current index matches artwork's index, this is a false positive
-      colplayer.player2.setCurrentTrack(tracknum);
-    } else {
-      togglePlayButtons(item);
-    }
+    togglePlayButtons(item);
     colplayer.player2.playPause();
     return;
   }

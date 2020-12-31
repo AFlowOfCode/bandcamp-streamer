@@ -109,9 +109,8 @@ export function observeTotal(page, parent) {
       // adding more tracks to player unshuffles playlist automatically
       // currently handling by just updating shuffled indicator
       // TODO: find way to keep it shuffled
-      if (colplayer.isShuffled) {
-        colplayer.pendingUnshuffle = true;
-      }
+      if (colplayer.isShuffled) colplayer.pendingUnshuffle = true;
+
       let items = page === 'collection' ? 
                   document.querySelectorAll('#collection-items .track_play_hilite') :
                   document.querySelectorAll('#wishlist-items .track_play_hilite');

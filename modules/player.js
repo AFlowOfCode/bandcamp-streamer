@@ -8,8 +8,7 @@ export function replaceFunctions(colplayer){
     self.currentTrackIndex(index);
     let newTrack = self.currentTrack();
     if (!newTrack) return;
-    let id = newTrack.itemId,
-        el = document.getElementById(newTrack.domId),
+    let el = document.getElementById(newTrack.domId),
         itemKey = getItemKey(el);
     console.log("domId:", newTrack.domId);
     console.log(newTrack, el);
@@ -76,6 +75,7 @@ export function addFunctions(colplayer){
           if (i === 0) {
             firstTrackEl = el;
             setCurrentEl(firstTrackEl);
+            colplayer.currentItemKey(getItemKey(el));
           }
         });
       } else {
@@ -136,6 +136,7 @@ export function catchErrors(player, page) {
   }
 }
 
+// @param {DOMnode} item - the <li> node for an item in the collection
 export function getItemKey(item) {
   let itemId = item.getAttribute("data-itemid"),
       itemType = item.getAttribute("data-itemtype").slice(0, 1),

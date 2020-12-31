@@ -1,8 +1,5 @@
 import { bindControlKeys, observeTotal } from './modules/shared.js';
-import { 
-  replaceFunctions, addFunctions, catchErrors, 
-  getItemKey, togglePlayButtons, setCurrentEl 
-} from './modules/player.js';
+import { replaceFunctions, addFunctions, catchErrors } from './modules/player.js';
 import { FeedPlaylist, initFeedPlaylist, setPrice, bindPlayButtons, checkDuplicates } from './modules/feed.js';
 import { loadCollection } from './modules/profile.js';
 
@@ -44,29 +41,32 @@ console.log('bandcamp streamer!');
     addFunctions(colplayer);
     catchErrors(colplayer.player2._playlist._player._html5player, 'collection');
     // handle people loading on non wishlist or collection tabs (eg /followers)
-    let tab = pagedata.active_tab;
+    const tab = pagedata.active_tab,
+          wishTab = document.querySelector('#grid-tabs > li[data-tab=wishlist]'),
+          collectionTab = document.querySelector('#grid-tabs > li[data-tab=collection]');
+    wishTab.id = 'wishtab';
+    collectionTab.id = 'collectiontab';
     console.log('initial tab:', tab);
+    // save these to listen for switching playlists later
+    window.wishTab = wishTab;
+    window.collectionTab = collectionTab;
     if (tab !== 'wishlist' && tab !== 'collection') {
-      let wishTab = document.querySelector('#grid-tabs > li[data-tab=wishlist]'),
-          collectionTab = document.querySelector('#grid-tabs > li[data-tab=collection]'),
-          tabClicked = function (e) {
-            e.stopPropagation();
-            let targetTab = false,
-                epath = e.path || e.composedPath();
-            console.log(e);
-            for (let i = 0; i < epath.length; i++) {
-              if (epath[i].id === 'wishtab') {
-                targetTab = 'wishlist';
-                break;
-              }
-            }
-            if (!targetTab) targetTab = 'collection';
-            collectionTab.removeEventListener('click', tabClicked);
-            wishTab.removeEventListener('click', tabClicked);
-            loadCollection(targetTab);
-          };
-      wishTab.id = 'wishtab';
-      collectionTab.id = 'collectiontab';
+      function tabClicked(e) {
+        e.stopPropagation();
+        let targetTab = false,
+            epath = e.path || e.composedPath();
+        console.log(e);
+        for (let i = 0; i < epath.length; i++) {
+          if (epath[i].id === 'wishtab') {
+            targetTab = 'wishlist';
+            break;
+          }
+        }
+        if (!targetTab) targetTab = 'collection';
+        collectionTab.removeEventListener('click', tabClicked);
+        wishTab.removeEventListener('click', tabClicked);
+        loadCollection(targetTab);
+      };
       wishTab.addEventListener('click', tabClicked);
       collectionTab.addEventListener('click', tabClicked);
     } else {
