@@ -45,6 +45,10 @@ Firefox: [https://addons.mozilla.org/en-US/firefox/addon/bandcamp-streamer/](htt
   * Bitcoin Cash (BCH): bitcoincash:qz26zw42996nf7xh7u2j3z6usv29vgk7wyp09ryk3t
 
 ### Changelog
+
+##### 1.2.1
+  * Fix issue with pausing by clicking on album art and unexpected playlist halting in a couple scenarios
+
 ##### 1.2  
   * Shuffle for wishlist
   * New icon
