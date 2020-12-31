@@ -76,12 +76,16 @@ export function observeTotal(page, parent) {
     console.log('detected playlist expansion');
     let numTracks;
     if (page === 'feed') {
-      // playerview._playlist._track changes right away to one from the next batch (doesn't stay as what is currently playing)
-      // this is incorrect
-      // playerview._playlist.first_playable_track is also changing to that
+      // bcplayer._playlist._loadedtrack stays same as what is currently playing
+      // bcplayer._playlist._track changes right away to the first track number from the next batch
+      // this is incorrect, so we change it back otherwise artwork gets out of sync 
+      // when track that was playing during expansion is still playing & then paused
+      // (bcplayer._playlist.first_playable_track also changes like _track but doesn't matter)
       if (currentList === 'feed') {
         let currentIndex = +bcplayer._playlist._loadedtrack;
         console.log('current track index playing', currentIndex);
+        feedPlayer._stillPlaying = currentIndex;
+        bcplayer._playlist._track = currentIndex;
         feedPlayer._nextTrack = currentIndex + 1;
         console.log('set force track (expansion):',feedPlayer._nextTrack);
       }        

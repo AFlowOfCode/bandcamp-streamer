@@ -187,8 +187,17 @@ export function initFeedPlaylist(FeedPlaylist) {
     if ((state === 'PLAYING' || state === 'PAUSED') 
          && this._nextTrack 
          && +this._track !== this._nextTrack) {
-      console.log('force playing correct track', this._nextTrack);
-      this.playlist.play_track(this._nextTrack);
+      // problem - if trying to pause the same track that was playing when feed was expanded
+      // instead player switches to the first of the new set & starts playing that
+      // so on expansion we set _stillPlaying & here we check if the indexes still match
+      // & don't force next track yet
+      if (this._stillPlaying === +this.playlist._loadedtrack) {
+        return;
+      } else {
+        this._stillPlaying = false;
+        console.log('force playing correct track', this._nextTrack);
+        this.playlist.play_track(this._nextTrack);
+      }
     } else if ((state === 'IDLE' || state === 'PAUSED') && +this._track === this._nextTrack) {
       console.log('force playing correct track (again)', this._nextTrack);
       this.playlist.play_track(this._nextTrack);
