@@ -44,11 +44,14 @@ console.log('bandcamp streamer!');
     const tab = pagedata.active_tab,
           wishTab = document.querySelector('#grid-tabs > li[data-tab=wishlist]'),
           collectionTab = document.querySelector('#grid-tabs > li[data-tab=collection]');
-    wishTab.id = 'wishtab';
+    if (wishTab) {
+      wishTab.id = 'wishtab';
+      window.wishTab = wishTab;
+    }
     collectionTab.id = 'collectiontab';
     console.log('initial tab:', tab);
     // save these to listen for switching playlists later
-    window.wishTab = wishTab;
+    
     window.collectionTab = collectionTab;
     if (tab !== 'wishlist' && tab !== 'collection') {
       function tabClicked(e) {
@@ -64,10 +67,10 @@ console.log('bandcamp streamer!');
         }
         if (!targetTab) targetTab = 'collection';
         collectionTab.removeEventListener('click', tabClicked);
-        wishTab.removeEventListener('click', tabClicked);
+        if (wishTab) wishTab.removeEventListener('click', tabClicked);
         loadCollection(targetTab);
       };
-      wishTab.addEventListener('click', tabClicked);
+      if (wishTab) wishTab.addEventListener('click', tabClicked);
       collectionTab.addEventListener('click', tabClicked);
     } else {
       loadCollection(tab);

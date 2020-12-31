@@ -100,9 +100,15 @@ export function buildPlaylists(index, isOwner) {
   if (isOwner) {
     // don't immediately update & stop current song if this is an update
     if (colplayer.player2.showPlay()) {
-      console.log("not playing:", colplayer.player2.showPlay());
-      colplayer.player2.setTracklist(albumPlaylist);
-      colplayer.currentPlaylist = 'albums';
+      console.log("not playing:", colplayer.player2.showPlay(), colplayer.currentPlaylist);
+      // only set to album playlist if first time or still on albums
+      if ((index === 0 && colplayer.currentPlaylist === undefined) || colplayer.currentPlaylist === 'albums') {
+        colplayer.player2.setTracklist(albumPlaylist);
+        colplayer.currentPlaylist = 'albums';
+      } else {
+        // favorites
+        colplayer.player2.setTracklist(collectionPlaylist);
+      }
     } else {
       console.log('collection pending update');
       colplayer.pendingUpdate = true;
@@ -114,9 +120,13 @@ export function buildPlaylists(index, isOwner) {
       // don't change the queue
       console.log('not changing queue yet');
     } else {
-      setQueueTitles(albumQueueTitles);
+      if (colplayer.currentPlaylist === 'albums') {
+        setQueueTitles(albumQueueTitles);
+      } else {
+        setQueueTitles(queueTitles);
+      }
     }
-    
+    // not owner
   } else {
     if (colplayer.player2.showPlay()) {
       console.log("not playing:", colplayer.player2.showPlay());
@@ -196,7 +206,7 @@ export function buildWishPlaylist(index) {
     } else {
       console.log('wishlist pending update');
       let status = document.querySelector('#playlist-status');
-      status.innerText = '(pending update)';
+      if (status) status.innerText = '(pending update)';
       colplayer.pendingWishUpdate = true;
     }  
   }
@@ -273,6 +283,7 @@ function playlistSwitcher(init, switchTo) {
           switcher.innerText = 'Switch to full albums';  
         }
       } else {
+        console.log('current playlist:', colplayer.currentPlaylist);
         colplayer.player2.setTracklist(colplayer.albumPlaylist);
         setQueueTitles(colplayer.albumQueueTitles);
         colplayer.currentPlaylist = 'albums';
@@ -297,9 +308,10 @@ export function setQueueTitles(titles){
 }
 
 export function updateTracklists(num) {
-  console.log('updating tracklist while nothing is playing');
+  console.log('updating tracklist while nothing is playing, will resume at', num);
   let status = document.querySelector('#playlist-status');
-  status.innerText = '';
+  // no status on non-owner collections
+  if (status) status.innerText = '';
 
   if (colplayer.pendingUpdate) {
     colplayer.player2.setTracklist(colplayer.collectionPlaylist);
