@@ -19,7 +19,7 @@ export function replaceFunctions(colplayer){
     self.duration(self._playlist.duration());
     setCurrentEl(el);
     colplayer.currentItemKey(itemKey);
-    window.document.title = window.originalTitle + ` | ${self.currentTrack().trackTitle} by ${self.currentTrack().trackData.artist}`;
+    window.document.title = `${self.currentTrack().trackTitle} by ${self.currentTrack().trackData.artist} | ${window.originalTitle}`;
     return true;
   };
   // have to redo these because currentTrackIndex returns a STRING and orig code just tacked a 1 onto it
