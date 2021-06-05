@@ -48,18 +48,19 @@ export function buildPlaylists(index, isOwner) {
 
   // build collection & album playlists
   for (let i = index; i < items.length; i++) {    
-    let id = items[i].getAttribute('data-itemid'),
-        domId = items[i].id,
-        // this contains the sequential keys of every item available
-        key = window.CollectionData.sequence[i],
-        track;
+    const id = items[i].getAttribute('data-itemid'),
+          domId = items[i].id,
+          // this contains the sequential keys of every item available
+          key = window.CollectionData.sequence[i],
+          fave_node = items[i].querySelector('.fav-track-link'),
+          is_subscriber_only = items[i].classList.contains('subscriber-item');
 
     // check for a favorite track
+    let track;
     if (isOwner) {
-      let node = document.querySelector(`#${domId} .fav-track-link`);
-      if (node) {
+      if (fave_node) {
         console.log('found fave track');
-        track = colplayer.tracklists.collection[key][+node.href.slice(node.href.indexOf('?t=') + 3) - 1];
+        track = colplayer.tracklists.collection[key][+fave_node.href.slice(fave_node.href.indexOf('?t=') + 3) - 1];
       } else {
         track = colplayer.tracklists.collection[key] ? colplayer.tracklists.collection[key][0] : false;
       } 
@@ -68,7 +69,8 @@ export function buildPlaylists(index, isOwner) {
     }
 
     // trackData.title is null when an item has no streamable track
-    let canPush = track && track.trackData.title !== null;
+    // bc also has a zombie entry for subscriber only items which gets stuck in an endless fetch loop
+    let canPush = track && track.trackData.title !== null && !is_subscriber_only;
 
     // build collection playlist
     if (canPush) {        
