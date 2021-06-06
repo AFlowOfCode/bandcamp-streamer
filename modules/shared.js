@@ -39,6 +39,7 @@ export function bindControlKeys({bcplayer, colplayer, albumplayer} = {}) {
         // console.log('col', e.code, colplayer);
         switch(e.code) {
           case 'Space':
+            console.log('space playpausing');
             colplayer.player2.playPause();
             break;
           case 'ArrowLeft':

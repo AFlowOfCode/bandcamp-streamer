@@ -2,7 +2,8 @@ import { setQueueTitles, updateTracklists } from './profile.js';
 
 export function replaceFunctions(colplayer){
   console.log('replacing functions');
-  let self = colplayer.player2;
+  const self = colplayer.player2,
+        origPlayPause = self.playPause;
   self.setCurrentTrack = function(index) {
     console.log("index to set", index);
     self.currentTrackIndex(index);
@@ -22,11 +23,44 @@ export function replaceFunctions(colplayer){
     window.document.title = `${self.currentTrack().trackTitle} by ${self.currentTrack().trackData.artist} | ${window.originalTitle}`;
     return true;
   };
+
+  /*
+    the toggle param handles a very specific scenario:
+    last track of initial col/wish batch is playing
+    when it plays to end, the state is changed to "paused"
+    at that point, if an update is pending because user clicked to expand
+    the tracklist update is triggered based on the state change
+    but if the user actually pauses the track, we don't want that to 
+    update the tracklist as it will immediately play the next track 
+    instead of pausing
+    so if an update is pending, it's set to false temporarily
+    to skip the state change trigger, then set back to true 
+  */
+  self.pendingUpdate = function({toggle=false} = {}) {
+    if (toggle) {
+      console.log('pending update hackery');
+      // temps are only used to check if it was true before
+      // so we know to put it back
+      // because typically either col OR wish will be pending
+      // so setting both to the opposite will accomplish nothing
+      // this scenario likely only happens once per page load (if at all)
+      if (colplayer.pendingUpdate || colplayer.pendingUpdateTemp) {
+        colplayer.pendingUpdateTemp = colplayer.pendingUpdate;
+        colplayer.pendingUpdate = !colplayer.pendingUpdate;
+      }
+      if (colplayer.pendingWishUpdate || colplayer.pendingWishUpdateTemp) {
+        colplayer.pendingWishUpdateTemp = colplayer.pendingWishUpdate;
+        colplayer.pendingWishUpdate = !!!colplayer.pendingWishUpdateTemp;
+      }
+    }
+    return !!(colplayer.pendingUpdate || colplayer.pendingWishUpdate);
+  }
+
   // have to redo these because currentTrackIndex returns a STRING and orig code just tacked a 1 onto it
   // eg going from index 2 ended up with 21 instead of 3
   // also want them to check if list needs updating before playing
   self.prev = function() {
-    if (colplayer.pendingUpdate || colplayer.pendingWishUpdate) {
+    if (self.pendingUpdate()) {
       updateTracklists(+self.currentTrackIndex() - 1);
       return;
     }
@@ -34,13 +68,51 @@ export function replaceFunctions(colplayer){
     return self.goToTrack(+self.currentTrackIndex() - 1);
   };
   self.next = function() {
-    if (colplayer.pendingUpdate || colplayer.pendingWishUpdate) {
+    if (self.pendingUpdate()) {
       updateTracklists(+self.currentTrackIndex() + 1);
       return;
     }
     if (!self.hasNext()) return false;
     return self.goToTrack(+self.currentTrackIndex() + 1);
   };
+
+  self.playPause = function() {
+    console.log('playPause override triggered');
+    let toggled = false;
+    if (self.pendingUpdate()) {
+      toggled = true;
+      self.pendingUpdate({toggle: true});
+    }
+    origPlayPause();
+    // timeout is necessary to avoid state trigger
+    if (toggled) {
+      setTimeout(() => {
+        self.pendingUpdate({toggle: true});
+        if (self.currentState() === 'paused' && self.pendingUpdate()) updateTracklists();
+      }, 1000);
+    }
+  }
+
+  // these overrides needed to allow hooking into state changes
+  function evt(event) {
+    return "player2." + (self.playerId ? self.playerId + "." : "") + event
+  }
+  self.currentState.subscribe(function(v) {
+    BCEvents.publish(evt("stateChange"), {
+        state: v,
+        track: self.currentTrack()
+    });
+    // before 1st expansion of col/wish, if last track of initial batch is playing & ends
+    // tracklist won't update unless done here
+    if (v === "paused" && self.pendingUpdate()) {
+      // verify it's the last track otherwise every time a user pauses when an update is pending
+      // it'll jump ahead
+      if (+self.currentTrackIndex() === self.currentTracklist().length - 1) {
+        console.log('end of playlist tracklist update trigger');
+        updateTracklists(+self.currentTrackIndex() + 1);
+      }
+    }
+  });
 }
 
 export function addFunctions(colplayer){

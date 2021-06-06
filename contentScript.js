@@ -102,9 +102,9 @@ console.log('bandcamp streamer!');
   window.feedPlayer = bcplayer ? new FeedPlaylist(bcplayer, originalPlaylist) : false;   
 
   bindControlKeys({
-    bcplayer: bcplayer,
-    colplayer: colplayer,
-    albumplayer: albumplayer
+    bcplayer,
+    colplayer,
+    albumplayer
   });
   
 })(window, document);

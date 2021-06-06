@@ -46,6 +46,11 @@ Firefox: [https://addons.mozilla.org/en-US/firefox/addon/bandcamp-streamer/](htt
 
 ### Changelog
 
+##### 1.2.2
+  * Put track artist & title first in browser tab name for quick visibility
+  * Fix collection playlist hanging on other users' subscriber only items
+  * Fix rare condition where tracks not added to playlist after clicking "view all" on collection/wishlist
+
 ##### 1.2.1
   * Fix issue with pausing by clicking on album art and unexpected playlist halting in a couple scenarios
 

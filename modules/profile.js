@@ -310,10 +310,17 @@ export function setQueueTitles(titles){
 }
 
 export function updateTracklists(num) {
-  console.log('updating tracklist while nothing is playing, will resume at', num);
-  let status = document.querySelector('#playlist-status');
+  let status = document.querySelector('#playlist-status'),
+      position = false;
   // no status on non-owner collections
   if (status) status.innerText = '';
+
+  if (!num && colplayer.player2.currentState() === 'paused') {
+    console.log('maintaining position while paused during update');
+    position = colplayer.player2.position();
+    num = +colplayer.player2.currentTrackIndex();
+  }
+  console.log('updating tracklist while nothing is playing, will resume at', num);
 
   if (colplayer.pendingUpdate) {
     colplayer.player2.setTracklist(colplayer.collectionPlaylist);
@@ -331,7 +338,11 @@ export function updateTracklists(num) {
     colplayer.pendingWishUpdate = false;
   }    
 
-  if (num) colplayer.player2.goToTrack(num);
+  if (position) {
+    colplayer.player2.setCurrentTrack(num);
+    colplayer.player2._playlist.seek(position);
+    colplayer.player2._playlist._player.pause();
+  } else if (num) colplayer.player2.goToTrack(num);
 }
 
 function replaceClickHandlers(){
@@ -376,7 +387,7 @@ function playerHandler(ev) {
   }
   console.log('clicked on dif track, setting correct track', item);
   colplayer.player2.stop();
-  if (colplayer.pendingUpdate || colplayer.pendingWishUpdate) updateTracklists();
+  if (colplayer.player2.pendingUpdate()) updateTracklists();
   setCurrentEl(item); 
   console.log(item);
   colplayer.currentItemKey(itemKey);
