@@ -224,7 +224,7 @@ export function initFeedPlaylist(FeedPlaylist) {
   FeedPlaylist.prototype.updateTitle = function() {
     const trackTitle = document.querySelector('#track_play_waypoint .waypoint-item-title').textContent,
           trackArtist = document.querySelector('#track_play_waypoint .waypoint-artist-title').textContent;
-    window.document.title = window.originalTitle + ` | ${trackTitle} ${trackArtist}`;
+    window.document.title = `${trackTitle} ${trackArtist} | ${window.originalTitle}`;
   }
 
   // DOM
