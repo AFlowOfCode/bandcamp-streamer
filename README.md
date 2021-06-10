@@ -29,20 +29,20 @@ Firefox: [https://addons.mozilla.org/en-US/firefox/addon/bandcamp-streamer/](htt
   * Shuffle wishlist tracks
 
 ### Known issues
-  * New stories added from the top while the feed page is loaded are not added to the playlist. If you want to hear them, just reload the page.
   * If the collection/wishlist playlist has been shuffled when more tracks are added, it becomes unshuffled. It is recommended to load all the desired tracks to the page first, then shuffle and start the playlist.
 
 ### What this extension does not do
   * Allow you to add a full album to your wishlist and then stream the whole thing. Playing only the first or featured track of an album in your wishlist is a Bandcamp limitation that this extension does not try to circumvent. You can do two things: support the artist and buy the album (best option for full flexibility + cool factor), or add each individual track from the album to your wishlist if possible. 
 
 ### Support development
-  * If you appreciate the extension, consider showing some support! Please leave a rating and some feedback, it's always motivating to hear from people who enjoy the extension. Suggestions and bug reports are also welcome, preferably here via Github.
+  * If you appreciate the extension, consider showing some support! Please leave a rating and some feedback, it's always motivating to hear from people who enjoy and find it useful. Suggestions and bug reports are always welcome, preferably on Github.
 
   * Any donation no matter how small is appreciated. Much like making music, writing browser extensions is often a labor of love with little to no financial benefits in return for a lot of heart and effort.
 
   * https://www.paypal.me/aflowofcode
-  * Bitcoin (BTC): 1BAUU2oop9hQdoLujcZPmkBKWiT6JVEyfM
-  * Bitcoin Cash (BCH): bitcoincash:qz26zw42996nf7xh7u2j3z6usv29vgk7wyp09ryk3t
+  * BTC: 1BAUU2oop9hQdoLujcZPmkBKWiT6JVEyfM
+  * ETH: 0x54e0beAAF0fA4858e9671aCcDEb4d5C4d4f41f95
+  * BCH: bitcoincash:qz26zw42996nf7xh7u2j3z6usv29vgk7wyp09ryk3t
 
 ### Changelog
 
@@ -64,5 +64,3 @@ Firefox: [https://addons.mozilla.org/en-US/firefox/addon/bandcamp-streamer/](htt
 ## Trademarks
 
 Bandcamp and [Bandcamp.com](http://www.bandcamp.com) are Copyright © Bandcamp, Inc.
-
-Special acknowledgement to [lovethebomb](https://github.com/lovethebomb/) for the initial feed player class.
