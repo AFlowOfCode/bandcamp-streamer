@@ -238,11 +238,13 @@ function playlistSwitcher(init, switchTo) {
     status.style.marginTop = '0';
     status.style.marginRight = '10px';
         
-    queueHeader.innerText = 'now playing ';
-    queueHeader.appendChild(header);
-
-    // only shuffle own collection & wishlist
-    if (colplayer.isOwner) queueHeader.appendChild(shuffle);
+    // if only 1 track in tab there won't be a playlist queue (or #playlist-header below)
+    if (queueHeader) {
+      queueHeader.innerText = 'now playing ';
+      queueHeader.appendChild(header);
+      // can only shuffle own collection & wishlist
+      if (colplayer.isOwner) queueHeader.appendChild(shuffle);
+    }
 
     // only owners have full albums & can shuffle
     if (colplayer.isOwner) {
@@ -256,10 +258,10 @@ function playlistSwitcher(init, switchTo) {
       switcher.addEventListener('click', () => playlistSwitcher());
       document.getElementById('shuffler').addEventListener('click', () => colplayer.shuffle());
     }
-    if (switchTo === 'wish') {
-      // init was sent from wish tab
-      playlistSwitcher(false, 'wish');
-    } 
+    
+    // init was sent from wish tab
+    if (switchTo === 'wish') playlistSwitcher(false, 'wish');
+
   } else {
     let switcher = document.getElementById('playlist-switcher'),
         header = document.getElementById('playlist-header'),
@@ -268,18 +270,15 @@ function playlistSwitcher(init, switchTo) {
       colplayer.player2.setTracklist(colplayer.wishPlaylist);
       setQueueTitles(colplayer.wishQueueTitles);
       colplayer.currentPlaylist = 'wish';
-      header.innerText = 'wishlist';
-      if (colplayer.isOwner) {
-        // shuffler.style.display = 'none'; // no shuffle on wishlist
-        switcher.innerText = '';
-      }
+      if (header) header.innerText = 'wishlist';
+      if (colplayer.isOwner) switcher.innerText = '';
     } else {        
       // default to favorites when switching from wish
       if (colplayer.currentPlaylist === 'albums' || colplayer.currentPlaylist === 'wish' || !colplayer.isOwner) {
         colplayer.player2.setTracklist(colplayer.collectionPlaylist);
         setQueueTitles(colplayer.queueTitles);
         colplayer.currentPlaylist = 'favorites';
-        header.innerText = 'favorite tracks';
+        if (header) header.innerText = 'favorite tracks';
         if (colplayer.isOwner) {
           shuffler.style.display = 'inline-block';
           switcher.innerText = 'Switch to full albums';  
@@ -289,7 +288,7 @@ function playlistSwitcher(init, switchTo) {
         colplayer.player2.setTracklist(colplayer.albumPlaylist);
         setQueueTitles(colplayer.albumQueueTitles);
         colplayer.currentPlaylist = 'albums';
-        header.innerText = 'albums';
+        if (header) header.innerText = 'albums';
         switcher.innerText = 'Switch to favorite tracks';
       }
     }      
