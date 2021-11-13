@@ -231,7 +231,7 @@ function playlistSwitcher(init, switchTo) {
     header.id = 'playlist-header';
     header.innerText = startList;
     shuffle.id = 'shuffler';
-    shuffle.innerText = '(shuffle!)';
+    shuffle.innerText = '🔀 (shuffle!)';
 
     status.id = 'playlist-status';
     status.title = 'the playlist will update between tracks to preserve continuity and avoid disrupting the currently playing track';

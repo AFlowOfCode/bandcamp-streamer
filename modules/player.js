@@ -134,7 +134,7 @@ export function addFunctions(colplayer){
         shufQueue.push(`${track.trackData.artist} - ${track.trackData.title}`);
       })
       colplayer.isShuffled = true;
-      el.innerText = '(unshuffle!)';
+      el.innerText = '➡ (unshuffle!)'; 
       colplayer.player2.setTracklist(a);
       let firstTrackEl;
       // allow clicking on item to play appropriate track from shuffle list 
@@ -182,7 +182,7 @@ export function addFunctions(colplayer){
       setQueueTitles(regQueue);
       setCurrentEl(document.getElementById(unshuffled[0].domId));
       colplayer.isShuffled = false;
-      el.innerText = '(shuffle!)';      
+      el.innerText = '🔀 (shuffle!)';      
     }
   }; // colplayer.shuffle()
 } // addFunctions()

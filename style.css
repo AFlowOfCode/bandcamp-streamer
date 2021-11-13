@@ -53,7 +53,8 @@
 }
 
 #shuffler {
-    margin-left:10px; 
-    font-size:0.7em; 
+    color:  blue;
     cursor: pointer;
+    font-size:0.7em; 
+    margin-left:10px; 
 }
