@@ -1,4 +1,4 @@
-import { setCurrentEl, getItemKey, togglePlayButtons } from './player.js';
+import { setCurrentEl, togglePlayButtons } from './player.js';
 import { observeTotal } from './shared.js';
 
 export function loadCollection(tab) {
@@ -16,20 +16,48 @@ export function loadCollection(tab) {
   setCurrentEl(initEl);
 
   // check if user expands collection
-  let collectionGrid = document.querySelector('#collection-items .collection-grid'),
-      wishlistGrid = document.querySelector('#wishlist-items .collection-grid');
-  if (collectionGrid) observeTotal('collection', collectionGrid);
-  if (wishlistGrid) observeTotal('wishlist', wishlistGrid);
+  let collectionGrid =       document.querySelector('#collection-items .collection-grid'),
+      // collectionSearchGrid = document.querySelector('#collection-search-items .collection-grid'),
+      wishlistGrid =         document.querySelector('#wishlist-items .collection-grid');
+      // wishlistSearchGrid =   document.querySelector('#wishlist-search-items .collection-grid');
+  if (collectionGrid)        observeTotal('collection', collectionGrid);
+  // if (collectionSearchGrid)  observeTotal('collection-search', collectionSearchGrid);
+  if (wishlistGrid)          observeTotal('wishlist', wishlistGrid);
+  // if (wishlistSearchGrid)    observeTotal('wishlist-search', wishlistSearchGrid);
 
   colplayer.show(true);
-
-  // show transport on page load
-  // but will stop any other currently playing tabs
-  // colplayer.player2._playlist.play(); 
-  // colplayer.player2._playlist.playpause(); 
   
   replaceClickHandlers();
-}
+
+  // monitor collection searches in order to build a searchResultPlaylist
+  BCEvents.subscribe("fanCollection.grid.newTracklists", function(result) {
+    // this event triggers on playlist expansion, but we only want it for actual search results
+    if (!colplayer.searchResults) return;
+    console.log('search result', result);
+    /* 
+      During search, event triggers once per result
+      BC pushes each result as a separate playlist 
+      to collectionPlayer.tracklists.<result.gridType>
+      album art appears in #[collection|wishlist]-search-items .collection-grid
+    */
+    colplayer.searchResults.push(result.newTracklists);
+    // searchResults array reset for each search, along with numSearchResults 
+    // in overrides.js FanCollectionAPI.searchItems  
+    if (colplayer.searchResults.length === colplayer.numSearchResults) {
+      // trigger playlist build, then switch to it if user plays from it
+      console.log('search complete');
+      colplayer.searchResultPlaylist = [];
+      colplayer.searchResults.forEach((result_item) => {
+        Object.keys(result_item).forEach((set) => {
+          colplayer.searchResultPlaylist.push(...collectionPlayer.tracklists[result.gridType][set]);
+        });
+      });
+    }
+    // todo: link each track to its DOM item, then switch to playlist when user clicks on one
+    // colplayer.player2.setTracklist(colplayer.searchResultPlaylist);
+  });
+
+} // loadCollection()
 
 function assignTransButtons() {
   // these get manipulated depending on play state
@@ -73,12 +101,8 @@ export function buildPlaylists(index, isOwner) {
     let canPush = track && track.trackData.title !== null && !is_subscriber_only;
 
     // build collection playlist
-    if (canPush) {        
-      console.log(`pushing ${track.trackData.artist} - ${track.trackData.title}`);
-      track.itemId = id;
-      track.domId = domId;
-      collectionPlaylist.push(track);
-      queueTitles.push(`${track.trackData.artist} - ${track.trackData.title}`);
+    if (canPush) {   
+      add_track({track, id, domId, playlist: collectionPlaylist, title_list: queueTitles}); 
       items[i].setAttribute('data-tracknum', i);
     } else {
       console.log(`couldn't find playable track for item ${key}`, colplayer.tracklists.collection[key]);
@@ -88,11 +112,15 @@ export function buildPlaylists(index, isOwner) {
       let album = colplayer.tracklists.collection[key];
       items[i].setAttribute('data-firsttrack', albumPlaylist.length);
       if (album.length >= 1) {
-        album.forEach(function(t,index){
-          t.itemId = id;
-          t.domId = domId;
-          albumPlaylist.push(t);
-          albumQueueTitles.push(`${t.trackData.artist} - ${t.trackData.title}`);
+        album.forEach((t) => {
+          add_track({
+            track: t, 
+            id, 
+            domId, 
+            playlist: albumPlaylist, 
+            title_list: albumQueueTitles,
+            list_name: 'album'
+          });
         });
       }
       console.log(`pushed album ${album[0].title} by ${album[0].trackData.artist}, playlist length now ${albumPlaylist.length}`);
@@ -118,7 +146,8 @@ export function buildPlaylists(index, isOwner) {
     // these have to be available for playlistSwitcher
     colplayer.albumPlaylist = albumPlaylist;
     colplayer.albumQueueTitles = albumQueueTitles;
-    if (colplayer.currentPlaylist === 'wish' && !colplayer.player2.showPlay()) {
+    // if (colplayer.currentPlaylist === 'wish' && !colplayer.player2.showPlay()) {
+    if (!colplayer.player2.showPlay()) {
       // don't change the queue
       console.log('not changing queue yet');
     } else {
@@ -175,11 +204,14 @@ export function buildWishPlaylist(index) {
         wishTrack = colplayer.tracklists.wishlist[wishKey][0];
 
     if (wishTrack) {
-      console.log(`pushing ${wishTrack.trackData.artist} - ${wishTrack.trackData.title} to wish playlist`);
-      wishTrack.itemId = wishId;
-      wishTrack.domId = wishDomId;
-      wishPlaylist.push(wishTrack);
-      wishQueueTitles.push(`${wishTrack.trackData.artist} - ${wishTrack.trackData.title}`);
+      add_track({
+        track: wishTrack, 
+        id: wishId, 
+        domId: wishDomId, 
+        playlist: wishPlaylist, 
+        title_list: wishQueueTitles,
+        list_name: 'wish'
+      });
       wishItems[i].setAttribute('data-tracknum', i);
     }
   }
@@ -214,6 +246,15 @@ export function buildWishPlaylist(index) {
   }
   replaceClickHandlers();  
   return wishItems[0];
+}
+
+// add track to playlist & queue titles list
+function add_track({track, id, domId, playlist, title_list, list_name=''} = {}) {
+  console.log(`pushing ${track.trackData.artist} - ${track.trackData.title} to ${list_name} playlist`);
+  track.itemId = id;
+  track.domId = domId;
+  playlist.push(track);
+  title_list.push(`${track.trackData.artist} - ${track.trackData.title}`);
 }
 
 function playlistSwitcher(init, switchTo) {
@@ -308,6 +349,7 @@ export function setQueueTitles(titles){
   }
 }
 
+// updates the current playlist with any new items added to the page while scrolling
 export function updateTracklists(num) {
   let status = document.querySelector('#playlist-status'),
       position = false;
@@ -394,4 +436,20 @@ function playerHandler(ev) {
   
   colplayer.player2.goToTrack(tracknum);
   assignTransButtons(); // this should happen after first ever play on page
+}
+
+/**
+ * Parses the unique identifier from the DOM element for a set of tracks
+ * colplayer.tracklists.<grid>[itemKey] is an array containing all the track objects
+ * for an item. If key is for an album, will contain all tracks in that album, otherwise
+ * will contain a single track. 
+ * @param {DOMnode} item - the <li> node for an item in the collection
+ * @returns {string} eg: t790236 
+ */ 
+export function getItemKey(item) {
+  let itemId = item.getAttribute("data-itemid"),
+      itemType = item.getAttribute("data-itemtype").slice(0, 1),
+      itemKey = itemType + itemId;
+  console.log('got item key', itemKey);
+  return itemKey;
 }

@@ -1,123 +1,8 @@
-import { setQueueTitles, updateTracklists } from './profile.js';
+import { setQueueTitles, getItemKey } from './profile.js';
 
-export function replaceFunctions(colplayer){
-  console.log('replacing functions');
-  const self = colplayer.player2,
-        origPlayPause = self.playPause;
-  self.setCurrentTrack = function(index) {
-    console.log("index to set", index);
-    self.currentTrackIndex(index);
-    let newTrack = self.currentTrack();
-    if (!newTrack) return;
-    let el = document.getElementById(newTrack.domId),
-        itemKey = getItemKey(el);
-    console.log("domId:", newTrack.domId);
-    console.log(newTrack, el);
-    togglePlayButtons(colplayer.lastEl, true);
-    togglePlayButtons(el);
-    colplayer.lastEl = el;
-    self._playlist.load([newTrack.trackData]);
-    self.duration(self._playlist.duration());
-    setCurrentEl(el);
-    colplayer.currentItemKey(itemKey);
-    window.document.title = `${self.currentTrack().trackTitle} by ${self.currentTrack().trackData.artist} | ${window.originalTitle}`;
-    return true;
-  };
-
-  /*
-    the toggle param handles a very specific scenario:
-    last track of initial col/wish batch is playing
-    when it plays to end, the state is changed to "paused"
-    at that point, if an update is pending because user clicked to expand
-    the tracklist update is triggered based on the state change
-    but if the user actually pauses the track, we don't want that to 
-    update the tracklist as it will immediately play the next track 
-    instead of pausing
-    so if an update is pending, it's set to false temporarily
-    to skip the state change trigger, then set back to true 
-  */
-  self.pendingUpdate = function({toggle=false} = {}) {
-    if (toggle) {
-      console.log('pending update hackery');
-      // temps are only used to check if it was true before
-      // so we know to put it back
-      // because typically either col OR wish will be pending
-      // so setting both to the opposite will accomplish nothing
-      // this scenario likely only happens once per page load (if at all)
-      if (colplayer.pendingUpdate || colplayer.pendingUpdateTemp) {
-        colplayer.pendingUpdateTemp = colplayer.pendingUpdate;
-        colplayer.pendingUpdate = !colplayer.pendingUpdate;
-      }
-      if (colplayer.pendingWishUpdate || colplayer.pendingWishUpdateTemp) {
-        colplayer.pendingWishUpdateTemp = colplayer.pendingWishUpdate;
-        colplayer.pendingWishUpdate = !!!colplayer.pendingWishUpdateTemp;
-      }
-    }
-    return !!(colplayer.pendingUpdate || colplayer.pendingWishUpdate);
-  }
-
-  // have to redo these because currentTrackIndex returns a STRING and orig code just tacked a 1 onto it
-  // eg going from index 2 ended up with 21 instead of 3
-  // also want them to check if list needs updating before playing
-  self.prev = function() {
-    if (self.pendingUpdate()) {
-      updateTracklists(+self.currentTrackIndex() - 1);
-      return;
-    }
-    if (!self.hasPrev()) return false;
-    return self.goToTrack(+self.currentTrackIndex() - 1);
-  };
-  self.next = function() {
-    if (self.pendingUpdate()) {
-      updateTracklists(+self.currentTrackIndex() + 1);
-      return;
-    }
-    if (!self.hasNext()) return false;
-    return self.goToTrack(+self.currentTrackIndex() + 1);
-  };
-
-  self.playPause = function() {
-    console.log('playPause override triggered');
-    let toggled = false;
-    if (self.pendingUpdate()) {
-      toggled = true;
-      self.pendingUpdate({toggle: true});
-    }
-    origPlayPause();
-    // timeout is necessary to avoid state trigger
-    if (toggled) {
-      setTimeout(() => {
-        self.pendingUpdate({toggle: true});
-        if (self.currentState() === 'paused' && self.pendingUpdate()) updateTracklists();
-      }, 1000);
-    }
-  }
-
-  // these overrides needed to allow hooking into state changes
-  function evt(event) {
-    return "player2." + (self.playerId ? self.playerId + "." : "") + event
-  }
-  self.currentState.subscribe(function(v) {
-    BCEvents.publish(evt("stateChange"), {
-        state: v,
-        track: self.currentTrack()
-    });
-    // before 1st expansion of col/wish, if last track of initial batch is playing & ends
-    // tracklist won't update unless done here
-    if (v === "paused" && self.pendingUpdate()) {
-      // verify it's the last track otherwise every time a user pauses when an update is pending
-      // it'll jump ahead
-      if (+self.currentTrackIndex() === self.currentTracklist().length - 1) {
-        console.log('end of playlist tracklist update trigger');
-        updateTracklists(+self.currentTrackIndex() + 1);
-      }
-    }
-  });
-}
-
-export function addFunctions(colplayer){
+export function addFunctions(colplayer) {
   // shuffle playlist
-  colplayer.shuffle = function () {
+  colplayer.shuffle = function() {
     colplayer.player2.stop();
     if (!colplayer.isShuffled) {
       console.log('shuffling');
@@ -185,6 +70,40 @@ export function addFunctions(colplayer){
       el.innerText = '🔀 (shuffle!)';      
     }
   }; // colplayer.shuffle()
+
+  /*
+    The toggle param handles a very specific scenario:
+    Last track of initial col/wish batch is playing -
+    when it reaches the end, the state is changed to "paused".
+    If an update is pending (because user clicked to load more items
+    while that last track was playing), the tracklist update is triggered 
+    based on that state change. But if the user actually pauses the track, 
+    we don't want that to update the tracklist as it will immediately play 
+    the next track instead of pausing like it should. So if an update is pending, 
+    it's set to false temporarily to skip the state change trigger, then set back to true 
+  */
+  colplayer.player2.pendingUpdate = function({toggle=false} = {}) {
+    if (toggle) {
+      console.log('pending update hackery');
+      /*
+        temps are only used to check if it was true before
+        so we know to put it back
+        because typically either col OR wish will be pending
+        so setting both to the opposite will accomplish nothing
+        this scenario likely only happens once per page load (if at all)
+      */
+      if (colplayer.pendingUpdate || colplayer.pendingUpdateTemp) {
+        colplayer.pendingUpdateTemp = colplayer.pendingUpdate;
+        colplayer.pendingUpdate = !colplayer.pendingUpdate;
+      }
+      if (colplayer.pendingWishUpdate || colplayer.pendingWishUpdateTemp) {
+        colplayer.pendingWishUpdateTemp = colplayer.pendingWishUpdate;
+        colplayer.pendingWishUpdate = !!!colplayer.pendingWishUpdateTemp;
+      }
+    }
+    return !!(colplayer.pendingUpdate || colplayer.pendingWishUpdate);
+  }
+
 } // addFunctions()
 
 // this catches errors that halt all playback and instead restarts the stream
@@ -208,20 +127,15 @@ export function catchErrors(player, page) {
   }
 }
 
-// @param {DOMnode} item - the <li> node for an item in the collection
-export function getItemKey(item) {
-  let itemId = item.getAttribute("data-itemid"),
-      itemType = item.getAttribute("data-itemtype").slice(0, 1),
-      itemKey = itemType + itemId;
-  console.log('got item key', itemKey);
-  return itemKey;
-}
+/**
+ * Handles the display of play/pause indicators on the DOM collection items
+ * and the player transport
+ * @param {DOMnode} item - the <li> node for an item in the collection
+ */
+export function togglePlayButtons(item) {
+  if (!item) return;
 
-// Handle playing elements
-export function togglePlayButtons(item, offonly) {
-  // Todo: when you click a track on playlist, it should jump to the row which has that album
-  // if playing a new track, turn off prev button first
-  if(!item) return;
+  // if item isn't marked as playing yet, it's about to be so make sure nothing else is 
   if (!item.classList.contains('playing')) {
     let prev = document.querySelector('.collection-item-container.playing');
     if (prev) prev.classList.remove('playing');
@@ -229,19 +143,23 @@ export function togglePlayButtons(item, offonly) {
 
   item.classList.toggle('playing');
 
-  // if track is playing make sure transport shows pause
   if (colplayer.transPause) {
     if (item.classList.contains('playing')) {
+      // item is newly playing, so make sure transport shows pause
       colplayer.transPause.style.display = 'inline-block';
       colplayer.transPlay.style.display = 'none';
-    } else if (!offonly) {
+    } else {
+      // item has been stopped, so show play
       colplayer.transPause.style.display = 'none';
       colplayer.transPlay.style.display = 'inline-block';
     }
   }
 }
 
-// sets the element for the playing object, needed for correct album cover play button display
+/**
+ * Sets the element for the playing object, needed for correct album cover play button display
+ * @param {DOMnode} item - the <li> node for an item in the collection
+ */
 export function setCurrentEl(item) {
   // this needs to be a jquery object
   colplayer.currentItemEl(jQuery(item));
