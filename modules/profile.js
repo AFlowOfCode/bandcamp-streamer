@@ -1,4 +1,4 @@
-import { setCurrentEl, togglePlayButtons } from './player.js';
+import { setCurrentEl, togglePlayButtons, assignTransButtons } from './player.js';
 import { observeTotal } from './shared.js';
 
 export function loadCollection(tab) {
@@ -49,6 +49,7 @@ export function loadCollection(tab) {
       colplayer.searchResultPlaylist = [];
       colplayer.searchResults.forEach((result_item) => {
         Object.keys(result_item).forEach((set) => {
+          console.log('result set', set);
           colplayer.searchResultPlaylist.push(...collectionPlayer.tracklists[result.gridType][set]);
         });
       });
@@ -58,12 +59,6 @@ export function loadCollection(tab) {
   });
 
 } // loadCollection()
-
-function assignTransButtons() {
-  // these get manipulated depending on play state
-  colplayer.transPlay = document.querySelector('#collection-player .playpause .play');
-  colplayer.transPause = document.querySelector('#collection-player .playpause .pause');
-}
 
 export function buildPlaylists(index, isOwner) {
   console.log('building playlists, index:',index, 'is owner:', isOwner);
@@ -75,56 +70,19 @@ export function buildPlaylists(index, isOwner) {
       albumQueueTitles =   index === 0 || !isOwner ? [] : colplayer.albumQueueTitles.slice();
 
   // build collection & album playlists
-  for (let i = index; i < items.length; i++) {    
-    const id = items[i].getAttribute('data-itemid'),
-          domId = items[i].id,
-          // this contains the sequential keys of every item available
-          key = window.CollectionData.sequence[i],
-          fave_node = items[i].querySelector('.fav-track-link'),
-          is_subscriber_only = items[i].classList.contains('subscriber-item');
-
-    // check for a favorite track
-    let track;
-    if (isOwner) {
-      if (fave_node) {
-        console.log('found fave track');
-        track = colplayer.tracklists.collection[key][+fave_node.href.slice(fave_node.href.indexOf('?t=') + 3) - 1];
-      } else {
-        track = colplayer.tracklists.collection[key] ? colplayer.tracklists.collection[key][0] : false;
-      } 
-    } else {
-      track = colplayer.tracklists.collection[key] ? colplayer.tracklists.collection[key][0] : false;
-    }
-
-    // trackData.title is null when an item has no streamable track
-    // bc also has a zombie entry for subscriber only items which gets stuck in an endless fetch loop
-    let canPush = track && track.trackData.title !== null && !is_subscriber_only;
-
-    // build collection playlist
-    if (canPush) {   
-      add_track({track, id, domId, playlist: collectionPlaylist, title_list: queueTitles}); 
-      items[i].setAttribute('data-tracknum', i);
-    } else {
-      console.log(`couldn't find playable track for item ${key}`, colplayer.tracklists.collection[key]);
-    }
-    // build album playlist 
-    if (isOwner && canPush) {
-      let album = colplayer.tracklists.collection[key];
-      items[i].setAttribute('data-firsttrack', albumPlaylist.length);
-      if (album.length >= 1) {
-        album.forEach((t) => {
-          add_track({
-            track: t, 
-            id, 
-            domId, 
-            playlist: albumPlaylist, 
-            title_list: albumQueueTitles,
-            list_name: 'album'
-          });
-        });
-      }
-      console.log(`pushed album ${album[0].title} by ${album[0].trackData.artist}, playlist length now ${albumPlaylist.length}`);
-    }
+  for (let i = index; i < items.length; i++) {   
+    add_to_playlist({
+      dom_list: items,
+      tracklist: colplayer.tracklists.collection,
+      playlist: collectionPlaylist,
+      album_playlist: albumPlaylist,
+      title_list: queueTitles,
+      album_title_list: albumQueueTitles,
+      list_name: 'collection',
+      index: i,
+      is_owner: isOwner
+    }); 
+    items[i].setAttribute('data-tracknum', i); 
   } // end collection/album tracklist builder loop 
 
   if (isOwner) {
@@ -198,22 +156,15 @@ export function buildWishPlaylist(index) {
   if (wishItems.length === 0) return;
 
   for (let i = index; i < wishItems.length; i++) {
-    let wishId = wishItems[i].getAttribute('data-itemid'),
-        wishDomId = wishItems[i].id,
-        wishKey = window.WishlistData.sequence[i],
-        wishTrack = colplayer.tracklists.wishlist[wishKey][0];
-
-    if (wishTrack) {
-      add_track({
-        track: wishTrack, 
-        id: wishId, 
-        domId: wishDomId, 
-        playlist: wishPlaylist, 
-        title_list: wishQueueTitles,
-        list_name: 'wish'
-      });
-      wishItems[i].setAttribute('data-tracknum', i);
-    }
+    add_to_playlist({
+      dom_list: wishItems,
+      tracklist: colplayer.tracklists.wishlist,
+      playlist: wishPlaylist,
+      title_list: wishQueueTitles,
+      list_name: 'wish',
+      index: i
+    });
+    wishItems[i].setAttribute('data-tracknum', i);
   }
   colplayer.wishQueueTitles = wishQueueTitles;
   colplayer.wishPlaylist = wishPlaylist;
@@ -249,12 +200,61 @@ export function buildWishPlaylist(index) {
 }
 
 // add track to playlist & queue titles list
-function add_track({track, id, domId, playlist, title_list, list_name=''} = {}) {
-  console.log(`pushing ${track.trackData.artist} - ${track.trackData.title} to ${list_name} playlist`);
-  track.itemId = id;
-  track.domId = domId;
+function add_to_playlist({
+  dom_list, tracklist, playlist, album_playlist=[], 
+  title_list, album_title_list=[], list_name, index, is_owner=false
+} = {}) {
+  const item_id = dom_list[index].getAttribute('data-itemid'),
+        dom_id = dom_list[index].id,
+        // these data objects contain the sequential keys of every item available
+        item_key = list_name.indexOf('wish') > -1 ? window.WishlistData.sequence[index] :
+                   window.CollectionData.sequence[index],
+        fave_node = dom_list[index].querySelector('.fav-track-link'),
+        is_subscriber_only = dom_list[index].classList.contains('subscriber-item');
+  
+  let track = tracklist[item_key][0];
+
+  // if a favorite track is set use that instead of first track in the set
+  if (is_owner && fave_node) {
+    console.log('found fave track');
+    track = tracklist[item_key][+fave_node.href.slice(fave_node.href.indexOf('?t=') + 3) - 1];
+  }
+
+  // trackData.title is null when an item has no streamable track
+  // bc also has a zombie entry for subscriber only items which gets stuck in an endless fetch loop
+  let can_push = track && track.trackData.title !== null && (is_owner || !is_subscriber_only);
+  if (can_push) {
+    push_track({track, item_id, dom_id, playlist, title_list, list_name});
+  } else {
+    console.log(`couldn't find playable track for item ${key}`, tracklist[item_key]);
+  }
+
+  // build album playlist 
+  if (is_owner && list_name === 'collection' && can_push) {
+    let album = tracklist[item_key];
+    dom_list[index].setAttribute('data-firsttrack', album_playlist.length);
+    if (album.length >= 1) {
+      album.forEach((t) => {
+        push_track({
+          track: t,
+          item_id,
+          dom_id,
+          playlist: album_playlist,
+          title_list: album_title_list,
+          list_name: 'albums'
+        });
+      });
+    }
+    console.log(`pushed album ${album[0].title} by ${album[0].trackData.artist}, playlist length now ${album_playlist.length}`);
+  }
+}
+
+function push_track({track, item_id, dom_id, playlist, title_list, list_name} = {}) {
+  track.itemId = item_id;
+  track.domId = dom_id;
   playlist.push(track);
   title_list.push(`${track.trackData.artist} - ${track.trackData.title}`);
+  console.log(`pushed ${track.trackData.artist} - ${track.trackData.title} to ${list_name} playlist`);
 }
 
 function playlistSwitcher(init, switchTo) {

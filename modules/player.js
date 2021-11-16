@@ -164,3 +164,12 @@ export function setCurrentEl(item) {
   // this needs to be a jquery object
   colplayer.currentItemEl(jQuery(item));
 }
+
+/**
+ * Sets DOM references to the transport player play & pause elements
+ */
+export function assignTransButtons() {
+  // these get manipulated depending on play state
+  colplayer.transPlay = document.querySelector('#collection-player .playpause .play');
+  colplayer.transPause = document.querySelector('#collection-player .playpause .pause');
+}
