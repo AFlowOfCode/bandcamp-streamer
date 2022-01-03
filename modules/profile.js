@@ -200,20 +200,20 @@ export function buildWishPlaylist(index) {
   if (index === 0 && !colplayer.currentPlaylist) {
     console.log('init wishlist');
     colplayer.player2.setTracklist(wishPlaylist);      
-    playlistSwitcher(true, 'wish');
+    switch_playlists({init: true, switch_to: 'wish'});
     setQueueTitles(wishQueueTitles);
   } else {
     if (index === 0) {
       window.wishTab.addEventListener('click', () => {
         if (colplayer.player2.showPlay()) {
-          playlistSwitcher(false, 'wish');
+          switch_playlists({init: false, switch_to: 'wish'});
         }
       });
     }
     if (colplayer.player2.showPlay()) {
       // wish not loaded first, nothing playing
-      playlistSwitcher(false, 'wish');       
-    } else {
+      switch_playlists({init: false, switch_to: 'wish'});       
+    } else if (colplayer.currentPlaylist === 'wish') {
       console.log('wishlist pending update');
       let status = document.querySelector('#playlist-status');
       if (status) status.innerText = '(pending update)';
@@ -287,7 +287,7 @@ function push_track({track, item_id, dom_id, playlist, title_list, list_name} = 
   track.domId = dom_id;
   playlist.push(track);
   title_list.push(`${track.trackData.artist} - ${track.trackData.title}`);
-  console.log(`pushed ${track.trackData.artist} - ${track.trackData.title} to ${list_name} playlist`);
+  // console.log(`pushed ${track.trackData.artist} - ${track.trackData.title} to ${list_name} playlist`);
 }
 
 function switch_playlists({init=false, switch_to} = {}) {
@@ -411,10 +411,12 @@ export function updateTracklists(num) {
   console.log('updating tracklist while nothing is playing, will resume at', num);
 
   if (colplayer.pendingUpdate) {
-    colplayer.player2.setTracklist(colplayer.collectionPlaylist);
-    setQueueTitles(colplayer.queueTitles);
-    // test if this makes it always swap to albums even if on favorites
-    if (colplayer.isOwner) {
+    if (colplayer.currentPlaylist === 'favorites') {
+      console.log('updating favorites');
+      colplayer.player2.setTracklist(colplayer.collectionPlaylist);
+      setQueueTitles(colplayer.queueTitles);
+    } else if (colplayer.currentPlaylist === 'albums') {
+      console.log('updating albums');
       colplayer.player2.setTracklist(colplayer.albumPlaylist);
       setQueueTitles(colplayer.albumQueueTitles);
     }
