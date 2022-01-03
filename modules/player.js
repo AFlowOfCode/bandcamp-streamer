@@ -128,22 +128,31 @@ export function catchErrors(player, page) {
 }
 
 /**
- * Handles the display of play/pause indicators on the DOM collection items
+ * Handles the display of play/pause button indicators on the DOM collection items
  * and the player transport
  * @param {DOMnode} item - the <li> node for an item in the collection
+ * @param {boolean} is_playing 
+ *    - true if passing in a track that is being switched to
+ *    - false if passing in a track that is being switching from
+ *    - undefined if current track is being playpaused
  */
-export function togglePlayButtons(item) {
+export function togglePlayButtons({item, is_playing} = {}) {
   if (!item) return;
-  // if item isn't marked as playing yet, it's about to be so make sure nothing else is 
-  if (!item.classList.contains('playing')) {
-    let prev = document.querySelector('.collection-item-container.playing');
-    if (prev) prev.classList.remove('playing');
-  }
+  let has_playing_class = item.classList.contains('playing');
+  console.log('dom item playing toggle, is playing?', is_playing); 
+  console.log('has playing class?', has_playing_class);
 
-  item.classList.toggle('playing');
+  // if we know this item is playing, make sure it has playing class
+  // if we know it isn't, make sure we remove the class
+  item.classList[is_playing ? 'add' : is_playing === false ? 'remove' : 'toggle']('playing');
+  has_playing_class = item.classList.contains('playing');
+  console.log('item now playing?', has_playing_class, item);
+
+  // return if this is just turning off an item because transport has already been handled
+  if (is_playing === false) return;
 
   if (colplayer.transPause) {
-    if (item.classList.contains('playing')) {
+    if (has_playing_class) {
       // item is newly playing, so make sure transport shows pause
       colplayer.transPause.style.display = 'inline-block';
       colplayer.transPlay.style.display = 'none';

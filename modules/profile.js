@@ -125,7 +125,7 @@ export function buildPlaylists(index, isOwner) {
       console.log('collection pending update');
       colplayer.pendingUpdate = true;
     }
-    // these have to be available for playlistSwitcher
+    // these have to be available for switch_playlists
     colplayer.albumPlaylist = albumPlaylist;
     colplayer.albumQueueTitles = albumQueueTitles;
     // if (colplayer.currentPlaylist === 'wish' && !colplayer.player2.showPlay()) {
@@ -157,11 +157,12 @@ export function buildPlaylists(index, isOwner) {
 
   // allow switching between full albums & favorite tracks
   if (index === 0 && colplayer.player2.showPlay()) {
-    playlistSwitcher(true); // runs init
+    // initialize playlist - defaults to albums for owner, otherwise favorites
+    switch_playlists({init: true}); 
     // always switch playlists if nothing played yet & tab clicked
     window.collectionTab.addEventListener('click', () => {
       if (colplayer.player2.showPlay()) {
-        playlistSwitcher(false, 'collection');
+        switch_playlists({switch_to: isOwner ? 'albums' : 'favorites'});
       }
     });
   }
@@ -289,8 +290,8 @@ function push_track({track, item_id, dom_id, playlist, title_list, list_name} = 
   console.log(`pushed ${track.trackData.artist} - ${track.trackData.title} to ${list_name} playlist`);
 }
 
-function playlistSwitcher(init, switchTo) {
-  console.log('switching playlists, init:', init, 'switchTo', switchTo);
+function switch_playlists({init=false, switch_to} = {}) {
+  console.log('switching playlists, init:', init, 'switching to', switch_to);
   if (colplayer.isShuffled) colplayer.shuffle(); 
   let queueHeader = document.querySelector('.queue-header h2');
   if (init) {
@@ -328,18 +329,18 @@ function playlistSwitcher(init, switchTo) {
       switcher.innerText = 'Switch to favorite tracks';
       parent.prepend(switcher);
       parent.prepend(status);
-      switcher.addEventListener('click', () => playlistSwitcher());
+      switcher.addEventListener('click', () => switch_playlists({switch_to: 'favorites'}));
       document.getElementById('shuffler').addEventListener('click', () => colplayer.shuffle());
     }
     
     // init was sent from wish tab
-    if (switchTo === 'wish') playlistSwitcher(false, 'wish');
+    if (switch_to === 'wish') switch_playlists({switch_to: 'wish'});
 
   } else {
     let switcher = document.getElementById('playlist-switcher'),
         header = document.getElementById('playlist-header'),
         shuffler = document.getElementById('shuffler');
-    if (switchTo === 'wish') {
+    if (switch_to === 'wish') {
       colplayer.player2.setTracklist(colplayer.wishPlaylist);
       setQueueTitles(colplayer.wishQueueTitles);
       colplayer.currentPlaylist = 'wish';
@@ -348,7 +349,7 @@ function playlistSwitcher(init, switchTo) {
         switcher.innerText = '';
         shuffler.classList.remove('hidden');
       }
-    } else if (switchTo === 'search') {
+    } else if (switch_to === 'search') {
       colplayer.player2.setTracklist(colplayer.searchResultPlaylist);
       setQueueTitles(colplayer.searchResultQueueTitles);
       colplayer.currentPlaylist = 'search';
@@ -442,7 +443,7 @@ function replaceClickHandlers(){
 
 function playerHandler(ev) {
   ev.stopPropagation();
-  console.log('playing track itemkey:', colplayer.currentItemKey());
+  console.log('playing track itemkey:', colplayer.currentItemKey(), 'current playlist', colplayer.currentPlaylist);
   let item = ev.target.closest(".collection-item-container"),
       grid = ev.target.closest(".collection-grid"),
       gridType = grid.closest('#search-items-container') ? 'search' :
@@ -454,11 +455,12 @@ function playerHandler(ev) {
 
   // need to set grid & deal with playlist switching before below
   if (gridType === 'wish' && colplayer.currentPlaylist !== 'wish') {
-    playlistSwitcher(false, 'wish');
-  } else if (gridType === 'collection' && colplayer.currentPlaylist !== 'collection') {
-    playlistSwitcher(false);
+    switch_playlists({switch_to:'wish'});
+  } else if (gridType === 'collection' && ['albums', 'favorites'].indexOf(colplayer.currentPlaylist) === -1) {
+    // default to favorites if switching out of wish or search
+    switch_playlists({switch_to: 'favorites'});
   } else if (gridType === 'search' && colplayer.currentPlaylist !== 'search') {
-    playlistSwitcher(false, 'search');
+    switch_playlists({switch_to: 'search'});
   }
 
   let tracknum = colplayer.isShuffled ? item.getAttribute('data-shufflenum') :
@@ -473,8 +475,8 @@ function playerHandler(ev) {
 
   if (item.classList.contains("no-streaming")) return;
   if (itemKey === colplayer.currentItemKey()) {
-    console.log('item playpausing');
-    togglePlayButtons(item);
+    console.log('item playpausing', colplayer.player2.currentState());
+    togglePlayButtons({item});
     colplayer.player2.playPause();
     return;
   }
@@ -487,6 +489,7 @@ function playerHandler(ev) {
   colplayer.currentGridType(gridType);
   
   colplayer.player2.goToTrack(tracknum);
+  console.log('player state after goToTrack:', colplayer.player2.currentState());
   assignTransButtons(); // this should happen after first ever play on page
 }
 

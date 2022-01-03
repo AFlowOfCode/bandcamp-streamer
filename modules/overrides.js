@@ -27,15 +27,17 @@ export function replaceFunctions(colplayer) {
     let el = document.getElementById(newTrack.domId),
         itemKey = getItemKey(el);
     // console.log("domId:", newTrack.domId, el);
-    // console.log('last el', colplayer.lastEl?.id, 'current el', el.id);
-    togglePlayButtons(colplayer.lastEl);
-    togglePlayButtons(el);
-    colplayer.lastEl = el;
+    console.log('last el', colplayer.lastEl?.id, 'current el', el.id);
+    togglePlayButtons({item: el, is_playing: true});
 
     self._playlist.load([newTrack.trackData]);
     self.duration(self._playlist.duration());
     setCurrentEl(el);
     colplayer.currentItemKey(itemKey);
+
+    // set play button on previous item
+    togglePlayButtons({item: colplayer.lastEl, is_playing: false});
+    colplayer.lastEl = el;
 
     window.document.title = `${self.currentTrack().trackTitle} by ${self.currentTrack().trackData.artist} | ${window.originalTitle}`;
     return true;
@@ -67,6 +69,7 @@ export function replaceFunctions(colplayer) {
     console.log('playPause override triggered');
     let toggled = false;
     if (self.pendingUpdate()) {
+      console.log('pending update');
       toggled = true;
       self.pendingUpdate({toggle: true});
     }
