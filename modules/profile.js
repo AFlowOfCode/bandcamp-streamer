@@ -30,32 +30,56 @@ export function loadCollection(tab) {
   replaceClickHandlers();
 
   // monitor collection searches in order to build a searchResultPlaylist
+  // note: search is only available on own profile
+  // TODO: separate this callback
   BCEvents.subscribe("fanCollection.grid.newTracklists", function(result) {
     // this event triggers on playlist expansion, but we only want it for actual search results
     if (!colplayer.searchResults) return;
-    console.log('search result', result);
     /* 
       During search, event triggers once per result
       BC pushes each result as a separate playlist 
       to collectionPlayer.tracklists.<result.gridType>
       album art appears in #[collection|wishlist]-search-items .collection-grid
     */
-    colplayer.searchResults.push(result.newTracklists);
-    // searchResults array reset for each search, along with numSearchResults 
+    // console.log('search result', result);
+    const result_key = Object.keys(result.newTracklists)[0];
+    colplayer.searchResults[result_key] = collectionPlayer.tracklists[result.gridType][result_key];
+
+    let is_owner = false;
+    // searchResults reset for each search, along with numSearchResults 
     // in overrides.js FanCollectionAPI.searchItems  
-    if (colplayer.searchResults.length === colplayer.numSearchResults) {
-      // trigger playlist build, then switch to it if user plays from it
+    if (Object.keys(colplayer.searchResults).length === colplayer.numSearchResults) {
       console.log('search complete');
-      colplayer.searchResultPlaylist = [];
-      colplayer.searchResults.forEach((result_item) => {
-        Object.keys(result_item).forEach((set) => {
-          console.log('result set', set);
-          colplayer.searchResultPlaylist.push(...collectionPlayer.tracklists[result.gridType][set]);
-        });
-      });
+      
+      Object.keys(colplayer.searchResults).forEach((list) => {
+        // tracklist w/ more than one track = owner collection search (belongs to an album)
+        if (list.length > 1) is_owner = true;
+      }); 
+
+      // need to wait for items to show up
+      setTimeout(() => {
+        const dom_list = document.querySelectorAll('#search-items-container .track_play_hilite');
+        colplayer.searchResultPlaylist = [];
+        colplayer.searchResultQueueTitles = [];
+        console.log('search dom list', dom_list.length, dom_list);
+
+        // trigger playlist build, then switch to it if user plays from it
+        for (let i = 0; i < dom_list.length; i++) {
+          console.log('adding search result to playlist', i);
+          add_to_playlist({
+            dom_list,
+            tracklist: colplayer.searchResults,
+            playlist: colplayer.searchResultPlaylist,
+            title_list: colplayer.searchResultQueueTitles,
+            list_name: `search-${result.gridType}`,
+            index: i,
+            is_owner
+          }); 
+          dom_list[i].setAttribute('data-searchnum', i);
+        }
+        replaceClickHandlers();
+      }, 1000); // setTimeout
     }
-    // todo: link each track to its DOM item, then switch to playlist when user clicks on one
-    // colplayer.player2.setTracklist(colplayer.searchResultPlaylist);
   });
 
 } // loadCollection()
@@ -175,7 +199,7 @@ export function buildWishPlaylist(index) {
   if (index === 0 && !colplayer.currentPlaylist) {
     console.log('init wishlist');
     colplayer.player2.setTracklist(wishPlaylist);      
-    playlistSwitcher(true,'wish');
+    playlistSwitcher(true, 'wish');
     setQueueTitles(wishQueueTitles);
   } else {
     if (index === 0) {
@@ -207,15 +231,17 @@ function add_to_playlist({
   const item_id = dom_list[index].getAttribute('data-itemid'),
         dom_id = dom_list[index].id,
         // these data objects contain the sequential keys of every item available
-        item_key = list_name.indexOf('wish') > -1 ? window.WishlistData.sequence[index] :
+        item_key = list_name.indexOf('search') > -1 ? getItemKey(dom_list[index]) :
+                   list_name.indexOf('wish') > -1 ? window.WishlistData.sequence[index] :
                    window.CollectionData.sequence[index],
         fave_node = dom_list[index].querySelector('.fav-track-link'),
         is_subscriber_only = dom_list[index].classList.contains('subscriber-item');
   
+  console.log(item_key, tracklist);
   let track = tracklist[item_key][0];
 
   // if a favorite track is set use that instead of first track in the set
-  if (is_owner && fave_node) {
+  if (is_owner && fave_node && list_name.indexOf('search') === -1) {
     console.log('found fave track');
     track = tracklist[item_key][+fave_node.href.slice(fave_node.href.indexOf('?t=') + 3) - 1];
   }
@@ -223,15 +249,21 @@ function add_to_playlist({
   // trackData.title is null when an item has no streamable track
   // bc also has a zombie entry for subscriber only items which gets stuck in an endless fetch loop
   let can_push = track && track.trackData.title !== null && (is_owner || !is_subscriber_only);
-  if (can_push) {
-    push_track({track, item_id, dom_id, playlist, title_list, list_name});
-  } else {
-    console.log(`couldn't find playable track for item ${key}`, tracklist[item_key]);
+
+  // owner search should be processed as an album since if searching own collection all album tracks are included
+  if (list_name !== 'search-collection' || !is_owner) {
+    if (can_push) {
+      push_track({track, item_id, dom_id, playlist, title_list, list_name});
+    } else {
+      console.log(`couldn't find playable track for item ${item_key}`, tracklist[item_key]);
+    }
   }
 
   // build album playlist 
-  if (is_owner && list_name === 'collection' && can_push) {
+  if (can_push && is_owner && (list_name === 'collection' || list_name === 'search-collection')) {
     let album = tracklist[item_key];
+    album_playlist = list_name === 'search-collection' ? playlist : album_playlist
+    album_title_list = list_name === 'search-collection' ? title_list : album_title_list
     dom_list[index].setAttribute('data-firsttrack', album_playlist.length);
     if (album.length >= 1) {
       album.forEach((t) => {
@@ -241,7 +273,7 @@ function add_to_playlist({
           dom_id,
           playlist: album_playlist,
           title_list: album_title_list,
-          list_name: 'albums'
+          list_name: list_name === 'search-collection' ? 'search-collection' : 'albums'
         });
       });
     }
@@ -312,16 +344,30 @@ function playlistSwitcher(init, switchTo) {
       setQueueTitles(colplayer.wishQueueTitles);
       colplayer.currentPlaylist = 'wish';
       if (header) header.innerText = 'wishlist';
-      if (colplayer.isOwner) switcher.innerText = '';
+      if (colplayer.isOwner) {
+        switcher.innerText = '';
+        shuffler.classList.remove('hidden');
+      }
+    } else if (switchTo === 'search') {
+      colplayer.player2.setTracklist(colplayer.searchResultPlaylist);
+      setQueueTitles(colplayer.searchResultQueueTitles);
+      colplayer.currentPlaylist = 'search';
+      if (header) header.innerText = 'search results';
+      if (colplayer.isOwner) {
+        switcher.innerText = '';
+        shuffler.classList.add('hidden');
+      } 
     } else {        
-      // default to favorites when switching from wish
-      if (colplayer.currentPlaylist === 'albums' || colplayer.currentPlaylist === 'wish' || !colplayer.isOwner) {
+      // default to favorites when switching from wish or search
+      const other_playlists = ['albums', 'wish', 'search'];
+      if (other_playlists.indexOf(colplayer.currentPlaylist) > -1 || !colplayer.isOwner) {
         colplayer.player2.setTracklist(colplayer.collectionPlaylist);
         setQueueTitles(colplayer.queueTitles);
         colplayer.currentPlaylist = 'favorites';
         if (header) header.innerText = 'favorite tracks';
         if (colplayer.isOwner) {
-          shuffler.style.display = 'inline-block';
+          shuffler.classList.remove('hidden');
+          // shuffler.style.display = 'inline-block';
           switcher.innerText = 'Switch to full albums';  
         }
       } else {
@@ -399,20 +445,26 @@ function playerHandler(ev) {
   console.log('playing track itemkey:', colplayer.currentItemKey());
   let item = ev.target.closest(".collection-item-container"),
       grid = ev.target.closest(".collection-grid"),
-      gridType = grid.getAttribute('data-ismain') === 'true' ? 'collection' :
+      gridType = grid.closest('#search-items-container') ? 'search' :
+                 grid.getAttribute('data-ismain') === 'true' ? 'collection' :
                  grid.getAttribute('data-iswish') === 'true' ? 'wish' :
                  grid.getAttribute('data-isgiftsgiven') === 'true' ? 'gifts_given' :
-                 'hidden';
+                 'hidden',
+      wish_search = gridType === 'search' && grid.closest('#wishlist-search-grid');
 
   // need to set grid & deal with playlist switching before below
   if (gridType === 'wish' && colplayer.currentPlaylist !== 'wish') {
-    playlistSwitcher(false,'wish');
-  } else if (gridType === 'collection' && colplayer.currentPlaylist === 'wish') {
+    playlistSwitcher(false, 'wish');
+  } else if (gridType === 'collection' && colplayer.currentPlaylist !== 'collection') {
     playlistSwitcher(false);
+  } else if (gridType === 'search' && colplayer.currentPlaylist !== 'search') {
+    playlistSwitcher(false, 'search');
   }
 
   let tracknum = colplayer.isShuffled ? item.getAttribute('data-shufflenum') :
-                 colplayer.currentPlaylist === 'favorites' || colplayer.currentPlaylist === 'wish' ? item.getAttribute('data-tracknum') : 
+                 colplayer.currentPlaylist === 'favorites' || colplayer.currentPlaylist === 'wish' ? item.getAttribute('data-tracknum') :
+                 // only wish search uses data-searchnum attr 
+                 colplayer.currentPlaylist === 'search' && wish_search ? item.getAttribute('data-searchnum') :
                  item.getAttribute('data-firsttrack'),          
       tralbumId = item.getAttribute("data-tralbumid"),
       tralbumType = item.getAttribute("data-tralbumtype"),

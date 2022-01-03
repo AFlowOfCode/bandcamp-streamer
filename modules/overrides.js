@@ -20,14 +20,14 @@ export function replaceFunctions(colplayer) {
     self.currentTrackIndex(index);
     let newTrack = self.currentTrack();
     if (!newTrack) return false;
-    console.log("Loading track at playlist index", index, newTrack);
+    console.log(`Loading track at ${colplayer.currentPlaylist} playlist index`, index, newTrack);
 
     // el is the <li> in the main collection grid with the album art, etc
     // <li id="<domId>" ...>  
     let el = document.getElementById(newTrack.domId),
         itemKey = getItemKey(el);
     // console.log("domId:", newTrack.domId, el);
-
+    // console.log('last el', colplayer.lastEl?.id, 'current el', el.id);
     togglePlayButtons(colplayer.lastEl);
     togglePlayButtons(el);
     colplayer.lastEl = el;
@@ -116,7 +116,7 @@ export function replaceFunctions(colplayer) {
           else
             console.log(`found ${data.tralbums.length} search results`);
             // prepare for new search result playlist
-            colplayer.searchResults = [];
+            colplayer.searchResults = {};
             colplayer.numSearchResults = data.tralbums.length;
               return d.resolve(data.tralbums, data.gifts, data.tracklists, data.redownload_urls, data.similar_gift_ids, data.item_lookup, data.search_key)
       }, function() {

@@ -134,7 +134,6 @@ export function catchErrors(player, page) {
  */
 export function togglePlayButtons(item) {
   if (!item) return;
-
   // if item isn't marked as playing yet, it's about to be so make sure nothing else is 
   if (!item.classList.contains('playing')) {
     let prev = document.querySelector('.collection-item-container.playing');
@@ -166,7 +165,7 @@ export function setCurrentEl(item) {
 }
 
 /**
- * Sets DOM references to the transport player play & pause elements
+ * Sets references to the transport player play & pause elements
  */
 export function assignTransButtons() {
   // these get manipulated depending on play state
