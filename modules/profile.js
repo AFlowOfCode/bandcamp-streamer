@@ -17,17 +17,16 @@ export function loadCollection(tab) {
 
   // check if user expands collection
   let collectionGrid =       document.querySelector('#collection-items .collection-grid'),
-      // collectionSearchGrid = document.querySelector('#collection-search-items .collection-grid'),
       wishlistGrid =         document.querySelector('#wishlist-items .collection-grid');
-      // wishlistSearchGrid =   document.querySelector('#wishlist-search-items .collection-grid');
   if (collectionGrid)        observeTotal('collection', collectionGrid);
-  // if (collectionSearchGrid)  observeTotal('collection-search', collectionSearchGrid);
   if (wishlistGrid)          observeTotal('wishlist', wishlistGrid);
-  // if (wishlistSearchGrid)    observeTotal('wishlist-search', wishlistSearchGrid);
 
+  // show player on page load
   colplayer.show(true);
-  
+  // set up the play buttons on dom items
   replaceClickHandlers();
+  // "view all" button to load entire collection/wishlist
+  init_true_view_all(tab);
 
   // monitor collection searches in order to build a search playlist
   // note: search is only available on own profile
@@ -179,7 +178,8 @@ export function buildPlaylists(index, isOwner) {
 
 // items aren't loaded until user clicks wishlist tab (or loads on /wishlist)
 export function buildWishPlaylist(index) {
-  console.log('building wish playlist, index:', index);
+  console.log('building wish playlist, starting index:', index);
+  if (index === 0) colplayer.wish_missing = 0;
   let wishItems = document.querySelectorAll('#wishlist-items .track_play_hilite'),
       wishPlaylist =       index === 0 ? [] : colplayer.wishPlaylist.slice(),
       wishQueueTitles =    index === 0 ? [] : colplayer.wishQueueTitles.slice();
@@ -195,7 +195,10 @@ export function buildWishPlaylist(index) {
       list_name: 'wish',
       index: i
     });
-    wishItems[i].setAttribute('data-tracknum', i);
+    if (wishItems[i].getAttribute('data-trackid')) {
+      // wish_missing is incremented in add_to_playlist
+      wishItems[i].setAttribute('data-tracknum', i - colplayer.wish_missing);
+    }
   }
   colplayer.wishQueueTitles = wishQueueTitles;
   colplayer.wishPlaylist = wishPlaylist;
@@ -244,7 +247,7 @@ function add_to_playlist({
         fave_node = dom_list[index].querySelector('.fav-track-link'),
         is_subscriber_only = dom_list[index].classList.contains('subscriber-item');
   
-  console.log(item_key, tracklist);
+  // console.log(item_key, tracklist);
   let track = tracklist[item_key][0];
 
   // if a favorite track is set use that instead of first track in the set
@@ -260,9 +263,15 @@ function add_to_playlist({
                  track.trackData.title !== null && 
                  dom_list[index].getAttribute('data-trackid') &&
                  (is_owner || !is_subscriber_only);
-  console.log('list', list_name, 'can push', can_push);
+  // console.log('list', list_name, 'can push', can_push);
   if (!can_push) {
-    colplayer.missing_search_tracks++;
+    console.log("missing track", item_key, track.trackData.title);
+    if (list_name === 'wish') {
+      colplayer.wish_missing++; 
+      console.log('total missing from wish playlist', colplayer.wish_missing);
+    } else if (list_name.indexOf('search') > -1) {
+      colplayer.missing_search_tracks++;
+    }
   } else if (list_name === 'wishlist-search') {
     dom_list[index].setAttribute('data-searchnum', index - colplayer.missing_search_tracks);
   }
@@ -383,6 +392,9 @@ function switch_playlists({init=false, switch_to} = {}) {
       if (other_playlists.indexOf(colplayer.currentPlaylist) > -1 || !colplayer.isOwner) {
         colplayer.player2.setTracklist(colplayer.collectionPlaylist);
         setQueueTitles(colplayer.queueTitles);
+        // since playlist stops on switch, need to clear item key
+        // otherwise if clicking on same item but new playlist it won't work
+        colplayer.currentItemKey('');
         colplayer.currentPlaylist = 'favorites';
         if (header) header.innerText = 'favorite tracks';
         if (colplayer.isOwner) {
@@ -394,6 +406,7 @@ function switch_playlists({init=false, switch_to} = {}) {
         console.log('current playlist:', colplayer.currentPlaylist);
         colplayer.player2.setTracklist(colplayer.albumPlaylist);
         setQueueTitles(colplayer.albumQueueTitles);
+        colplayer.currentItemKey('');
         colplayer.currentPlaylist = 'albums';
         if (header) header.innerText = 'albums';
         switcher.innerText = 'Switch to favorite tracks';
@@ -496,16 +509,19 @@ function playerHandler(ev) {
       tralbumId = item.getAttribute("data-tralbumid"),
       tralbumType = item.getAttribute("data-tralbumtype"),
       itemKey = getItemKey(item);
+
+  console.log('got tracknum', tracknum);
   console.log(`clicked on itemKey: ${itemKey}, is ${colplayer.currentItemKey()}?`, itemKey === colplayer.currentItemKey());
 
   if (item.classList.contains("no-streaming")) return;
+
   if (itemKey === colplayer.currentItemKey()) {
     console.log('item playpausing', colplayer.player2.currentState());
     togglePlayButtons({item});
     colplayer.player2.playPause();
     return;
   }
-  console.log('clicked on dif track, setting correct track', item);
+  console.log('clicked on dif track, setting correct track', tracknum, item);
   colplayer.player2.stop();
   if (colplayer.player2.pendingUpdate()) updateTracklists();
   setCurrentEl(item); 
@@ -532,4 +548,35 @@ export function getItemKey(item) {
       itemKey = itemType + itemId;
   console.log('got item key', itemKey);
   return itemKey;
+}
+
+/**
+ * Sets the "view all" items button to load entire collection / wishlist
+ * @param {string} tab_name - eg 'collection'
+ */
+export function init_true_view_all(tab_name) {
+  const btn_wrap = document.querySelector(`#${tab_name}-items .show-button`),
+        show_btn = btn_wrap.querySelector('.show-more'),
+        show_btn_clone = show_btn.cloneNode(true);
+
+  show_btn.innerText = 'View 20 more';
+  show_btn_clone.innerText = 'View ALL items';
+  show_btn_clone.title = 'Be patient if there are a lot!';
+  btn_wrap.appendChild(show_btn_clone);
+  show_btn_clone.addEventListener('click', () => load_more_items(tab_name));
+}
+
+function load_more_items(tab_name) {
+  // batchSize is how many it loads at once - too many & browser has trouble, too little & it takes too long
+  // default is 20
+  CollectionGrids[tab_name].batchSize = 250;
+  if (CollectionGrids[tab_name].sequence.length !== CollectionGrids[tab_name].itemCount) {
+    CollectionGrids[tab_name].paginate().then((res) => {
+      // res = the array of items
+      // res[n].also_collected_count = num collections it appears in
+      // console.log('done loading, response:', res);
+      console.log('loaded', CollectionGrids[tab_name].sequence.length, 'of', CollectionGrids[tab_name].itemCount);
+      load_more_items(tab_name);
+    });
+  }
 }

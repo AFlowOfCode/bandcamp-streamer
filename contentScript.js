@@ -79,13 +79,13 @@ console.log('Bandcamp Streamer! (v1.3)');
   } else if (bcplayer) {
     console.log('feed init');
     catchErrors(bcplayer._playlist._player._html5player, 'feed');
+    bcplayer.feed_playlist = [];
   }
 
   /**********************************************************
    ********** FEED FUNCTIONS ********************************
    **********************************************************/
 
-  if (bcplayer) bcplayer.feed_playlist = [];
   window.originalPlaylist = bcplayer ? bcplayer._playlist._playlist : '';
   window.releasePlaylist = [];
   window.releasePlaylistLength = undefined;

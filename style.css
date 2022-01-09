@@ -62,3 +62,13 @@
 .hidden {
     display: none;
 }
+
+/* show more button */
+.expand-container.show-button {
+    display: flex;
+    justify-content: center;
+}
+
+.expand-container.show-button > .show-more {
+    margin: 0 1em;
+}

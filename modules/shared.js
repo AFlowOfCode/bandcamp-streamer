@@ -1,5 +1,5 @@
 import { bindPlayButtons, checkDuplicates, setPrice } from './feed.js';
-import { buildPlaylists, buildWishPlaylist } from './profile.js';
+import { buildPlaylists, buildWishPlaylist, init_true_view_all } from './profile.js';
 
 export function countInArray(array, value) {
   return array.reduce((n, x) => n + (x === value), 0);
@@ -128,6 +128,7 @@ export function observeTotal(page, parent) {
           } else {
             console.log('initializing collection playlist');
             buildPlaylists(0, colplayer.isOwner);
+            init_true_view_all('collection');
           }
           colplayer.collectionLength = numTracks;
         }
@@ -140,6 +141,7 @@ export function observeTotal(page, parent) {
           } else {
             console.log('initializing wish playlist');
             buildWishPlaylist(0);
+            init_true_view_all('wishlist');
           }
           colplayer.wishlistLength = numTracks;
         }

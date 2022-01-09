@@ -29,7 +29,7 @@ Firefox: [https://addons.mozilla.org/en-US/firefox/addon/bandcamp-streamer/](htt
   * Shuffle wishlist tracks
 
 ### Known issues
-  * If the collection/wishlist playlist has been shuffled when more tracks are added, it becomes unshuffled. It is recommended to load all the desired tracks to the page first, then shuffle and start the playlist.
+  * If the collection/wishlist playlist has been shuffled when more tracks are added, it becomes unshuffled and playback stops. It is recommended to load all the desired tracks to the page first, then shuffle and start the playlist.
 
 ### What this extension does not do
   * Allow you to add a full album to your wishlist and then stream the whole thing. Playing only the first or featured track of an album in your wishlist is a Bandcamp limitation that this extension does not try to circumvent. You can do two things: support the artist and buy the album (best option for full flexibility + cool factor), or add each individual track from the album to your wishlist if possible. 
@@ -46,6 +46,14 @@ Firefox: [https://addons.mozilla.org/en-US/firefox/addon/bandcamp-streamer/](htt
 
 ### Changelog
 
+##### 1.3.0
+  * Button to load entire collection/wishlist at one time
+  * Playlists for collection/wishlist search results
+  * Add icons for shuffle/unshuffle  
+  
+  * Fix playlist switch error when only 1 track in collection or wishlist
+  * Fix duplicate tracks in feed breaking playlist order & item play buttons
+
 ##### 1.2.2
   * Put track artist & title first in browser tab name for quick visibility
   * Fix collection playlist hanging on other users' subscriber only items
@@ -57,9 +65,6 @@ Firefox: [https://addons.mozilla.org/en-US/firefox/addon/bandcamp-streamer/](htt
 ##### 1.2  
   * Shuffle for wishlist
   * New icon
-
-### Building the package
- * If you want to build and load the browser extension yourself, rename the manifest file for the browser of your choice to manifest.json and follow the browser's instructions for loading a developer extension. On Windows you could also use something like this script I wrote to [automatically create uploadable zip packages for browser extensions written for both Firefox and Chrome](https://gist.github.com/AFlowOfCode/6704a5d56f58a016c8f3205f2c18e4e8).
 
 ## Trademarks
 
