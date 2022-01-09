@@ -9,7 +9,7 @@ import { loadCollection } from './modules/profile.js';
   * by A Flow of Code      *
   * github.com/aflowofcode *
   **************************/
-console.log('bandcamp streamer!');
+console.log('Bandcamp Streamer! (v1.3)');
 
 (function(window, document) {
 
@@ -85,9 +85,8 @@ console.log('bandcamp streamer!');
    ********** FEED FUNCTIONS ********************************
    **********************************************************/
 
+  if (bcplayer) bcplayer.feed_playlist = [];
   window.originalPlaylist = bcplayer ? bcplayer._playlist._playlist : '';
-  window.feedPlaylist = [];
-  window.feedPlaylistLength = undefined;
   window.releasePlaylist = [];
   window.releasePlaylistLength = undefined;
   window.currentList = 'feed';

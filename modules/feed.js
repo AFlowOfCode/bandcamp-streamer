@@ -22,7 +22,7 @@ export function FeedPlaylist(bcplayer, originalPlaylist) {
   console.log('Sorting playlists');
   for (let i = 0; i < originalPlaylist.length; i++) {
     let origId = originalPlaylist[i].id.toString();
-    console.log(`index ${i} origId ${origId}`);
+    // console.log(`index ${i} origId ${origId}`);
     if (feedTracks.indexOf(origId) != -1) {
       let dupes = false,
           timesInArray = countInArray(feedTracks, origId),
@@ -72,9 +72,9 @@ export function FeedPlaylist(bcplayer, originalPlaylist) {
   }
   // 10 feed stories loaded by default, but could change on whims of bandcamp
   // reference this to determine when tracks are added by scrolling
-  feedPlaylistLength = bcplayer._playlist.length();
-  console.log(`Feed has ${feedPlaylistLength} tracks to start with`);
-  console.log('initial feed playlist:',bcplayer._playlist._playlist);
+  bcplayer.feed_playlist_length = bcplayer._playlist.length();
+  console.log(`Feed has ${bcplayer.feed_playlist_length} tracks to start with`);
+  console.log('initial feed playlist:', bcplayer._playlist._playlist);
   // reference this in case any tracks added via scrolling while release list is playing
   releasePlaylistLength = releasePlaylist.length;
   console.log('initial release playlist:', releasePlaylist, releasePlaylistLength);
@@ -179,7 +179,7 @@ export function initFeedPlaylist(FeedPlaylist) {
 
   FeedPlaylist.prototype.onStateUpdate = function(state) {
     console.log("onStateUpdate:", state, "track:", this._track);
-    this.updateTitle();
+    if (state === 'PLAYING') this.updateTitle();
     // on very first play (which will be first state update) set the "now playing / last played" visible permanently
     // if set before first play, appears broken (has no img until something is loaded)
     if (!nowPlaying.classList.contains('stream-activated')) nowPlaying.classList.add('stream-activated');
@@ -222,9 +222,13 @@ export function initFeedPlaylist(FeedPlaylist) {
   }; // FeedPlaylist.prototype.onStateUpdate
 
   FeedPlaylist.prototype.updateTitle = function() {
-    const trackTitle = document.querySelector('#track_play_waypoint .waypoint-item-title').textContent,
-          trackArtist = document.querySelector('#track_play_waypoint .waypoint-artist-title').textContent;
-    window.document.title = `${trackTitle} ${trackArtist} | ${window.originalTitle}`;
+    // make sure correct track has time to show up first
+    setTimeout(() => {
+      // console.log('updating tab title');
+      const trackTitle = document.querySelector('#track_play_waypoint .waypoint-item-title').textContent,
+            trackArtist = document.querySelector('#track_play_waypoint .waypoint-artist-title').textContent;
+      window.document.title = `${trackTitle} ${trackArtist} | ${window.originalTitle}`;
+    }, 100);
   }
 
   // DOM
@@ -329,7 +333,7 @@ export function setPrice(id) {
       // pagedata = window.pagedata;
   for (let i = 0; i < pagedata.track_list.length; i++) {
     if (pagedata.track_list[i].id == id) {
-      console.log(i, pagedata.track_list[i]);
+      // console.log(i, pagedata.track_list[i]);
       price.unit = pagedata.track_list[i].currency === 'USD' ? '$' : 
                    pagedata.track_list[i].currency === 'EUR' ? '€' :
                    pagedata.track_list[i].currency === 'GBP' ? '£' :
@@ -359,14 +363,22 @@ export function setPrice(id) {
   }
 } // setPrice()
 
+/**
+ * Handles tracks added to the feed while the release list is playing
+ */
 function copyScrollAddedTracks() {
-  console.log(`release playlist length start: ${releasePlaylistLength} & end: ${bcplayer._playlist.length()}`);
+  /* the new feed tracks get appended to the currently playing playlist
+     this doesn't affect the canonical release playlist since it is stored in releasePlaylist
+     so releasePlaylistLength will always be the starting index of the new tracks */
+  // console.log(`release playlist length start: ${releasePlaylistLength} & end: ${bcplayer._playlist.length()}`);
   if (bcplayer._playlist.length() > releasePlaylistLength) {
     console.log(`${bcplayer._playlist.length() - releasePlaylistLength} tracks added by scrolling`);
     for (let i = releasePlaylistLength; i < bcplayer._playlist.length(); i++) {
       setPrice(bcplayer._playlist._playlist[i].id);
-      feedPlaylist.push(bcplayer._playlist._playlist[i]);
+      bcplayer.feed_playlist.push(bcplayer._playlist._playlist[i]);
     }
+    bcplayer.feed_playlist_length = bcplayer.feed_playlist.length;
+    console.log('new feed playlist length', bcplayer.feed_playlist_length);
   } 
   // check if tracks appear multiple times after scroll-adding
   // bandcamp won't add them to playlist for some reason
@@ -375,18 +387,18 @@ function copyScrollAddedTracks() {
 }
 
 export function checkDuplicates() {
-  let feedTracks = getTrackIds('feed');
-  let alreadyCopied = [];
+  const feedTracks = getTrackIds('feed'),
+        alreadyCopied = [];
   for (let i = 0; i < feedTracks.length; i++) {
-    let instances = countInArray(feedTracks, feedTracks[i]);
+    const instances = countInArray(feedTracks, feedTracks[i]),
+          dupes = [];
     if (instances > 1 && alreadyCopied.indexOf(feedTracks[i]) == -1) {
       // find the indexes of the duplicates
-      console.log('first instance of dupe at index',i);
-      let dupes = [];
+      console.log('first instance of dupe at index', i, feedTracks[i]);
       for (let d = i + 1; d < feedTracks.length; d++) {
         if (feedTracks[d] === feedTracks[i]) {
           console.log('found dupe at index', d);
-          let listToCheck = currentList === 'release' ? feedPlaylist : bcplayer._playlist._playlist;
+          let listToCheck = currentList === 'release' ? bcplayer.feed_playlist : bcplayer._playlist._playlist;
           if (listToCheck[d].id != feedTracks[i]) {
             console.log('found this track there instead', listToCheck[d]);
             dupes.push(d);
@@ -398,7 +410,7 @@ export function checkDuplicates() {
         console.log(`making ${dupes.length} copies of ${feedTracks[i]}`);
         for (let s = 0; s < dupes.length; s++) {
           if (currentList === 'release') {
-            spliceIntoList(feedPlaylist, dupes[s], feedPlaylist[i]);
+            spliceIntoList(bcplayer.feed_playlist, dupes[s], bcplayer.feed_playlist[i]);
           } else {
             spliceIntoList(bcplayer._playlist._playlist, dupes[s], bcplayer._playlist._playlist[i]);    
           }
@@ -410,24 +422,24 @@ export function checkDuplicates() {
   }
 }
 
-function switchLists(list) {
-  if (list === currentList) {
-    console.log(`still on same playlist`);
+function switch_lists({switch_to} = {}) {
+  if (switch_to === currentList) {
+    // console.log(`still on ${currentList} playlist`);
     return;
-  } else if (list === 'release') {
+  } else if (switch_to === 'release') {
     // save the current feed playlist (it's possible new tracks were added by scrolling)
-    feedPlaylist = bcplayer._playlist._playlist;
+    bcplayer.feed_playlist = bcplayer._playlist._playlist.slice();
     // .load calls .unload, which kills the whole playlist before adding anything      
     bcplayer._playlist.load(releasePlaylist);
     // note: if release playlist ends, any scroll-added tracks will play automatically
     // (they are appended dynamically to the list)
     currentList = 'release';
   } else {
-    copyScrollAddedTracks();
-    bcplayer._playlist.load(feedPlaylist);
+    // switching from release to feed - any playlist expansion has already been dealt with
+    bcplayer._playlist.load(bcplayer.feed_playlist);
     currentList = 'feed';
   }
-  console.log(`switched list to ${list}`, bcplayer._playlist._playlist);
+  console.log(`switched list to ${switch_to}`, bcplayer._playlist._playlist);
 }
 
 // determine which list/track was clicked & switch playlists as needed
@@ -439,17 +451,21 @@ export function bindPlayButtons() {
   setTrackNumbers();
 }
 
-// because bandcamp doesn't add scroll-added tracks to the playlist
-// if they already appear in the release playlist
-function verifyInPlaylist(feedTracks) {
-  if (currentList === 'release') {
-    // need to copy over any scroll-added tracks first
-    copyScrollAddedTracks();
-  }
-  let deadTracks = [];
-  for (let i = 0; i < feedTracks.length; i++) {
-    let trackId = feedTracks[i].getAttribute('data-trackid'),
-        playlist = currentList === 'feed' ? playerview._playlist._playlist : feedPlaylist,
+/**
+ * Verifies all items in the fan activity feed have a corresponding track in the feed playlist
+ * Needed since BC doesn't add scroll-added tracks to the feed playlist if they already appear in the release playlist
+ * @param {HTMLCollection} feed_items - selected with '.story-innards .track_play_auxiliary'
+ * @returns {array} array of indexes for which there is no corresponding playable track
+ */
+function verify_has_playlist_track(feed_items) {
+  console.log('verifying tracks in playlist');
+  // need to copy over any scroll-added tracks first if currently playing from releases
+  if (currentList === 'release') copyScrollAddedTracks();
+
+  const dead_indexes = [];
+  for (let i = 0; i < feed_items.length; i++) {
+    let trackId = feed_items[i].getAttribute('data-trackid'),
+        playlist = currentList === 'feed' ? playerview._playlist._playlist : bcplayer.feed_playlist,
         trackFound = findInPlaylist(playlist, trackId);
 
     if (trackFound !== 0 && !trackFound) {
@@ -461,34 +477,36 @@ function verifyInPlaylist(feedTracks) {
       if (releaseIndex || originalIndex) {
         spliceIntoList(playlist, i, trackObject);
       } else {
-        deadTracks.push(i);
+        dead_indexes.push(i);
       }
     }
   }      
-  return deadTracks;
+  return dead_indexes;
 }
 
-// need track numbers on the elements to ensure proper track gets played
+/** 
+ * Sets the data-tracknum attribute on each feed & release DOM item with its corresponding playlist track index number
+ * to ensure the proper track gets played when clicked. Handles items which do not have playable tracks
+ */
 function setTrackNumbers() {
-  let feedTracks = document.querySelectorAll('.story-innards .track_play_auxiliary'),
-      releaseTracks = document.querySelectorAll('#new-releases-vm .track_play_auxiliary'),
-      // tracks not found in either list (bc error?)
-      // note this only sends back dead tracks found originally in feed list
-      // haven't seen a deadtrack issue for release list
-      deadTracks = verifyInPlaylist(feedTracks),
-      skips = 0;
+  const feed_items = document.querySelectorAll('.story-innards .track_play_auxiliary'),
+        release_items = document.querySelectorAll('#new-releases-vm .track_play_auxiliary'),
+        // tracks not found in either list (bc error?)
+        // note this only sends back dead tracks found originally in feed list
+        // haven't seen a deadtrack issue for release list
+        dead_indexes = verify_has_playlist_track(feed_items);
 
-  for (let i = 0; i < feedTracks.length; i++) {
-    if (deadTracks.indexOf(i) === -1) {
-      feedTracks[i].setAttribute('data-tracknum', i - skips);
+  let skips = 0;
+  feed_items.forEach((item, i) => {
+    if (dead_indexes.indexOf(i) === -1) {
+      item.setAttribute('data-tracknum', i - skips);
     } else {
       skips++;
-      console.log(`skipped story ${i} (deadtrack), num skips: ${skips}`);
+      console.log(`skipped story ${i} (deadtrack), num skips so far: ${skips}`);
     }
-  }
-  for (let j = 0; j < releaseTracks.length; j++) {
-    releaseTracks[j].setAttribute('data-tracknum', j);
-  }
+  });
+
+  release_items.forEach((item, i) => item.setAttribute('data-tracknum', i));
 }
 
 function findInPlaylist(list, track) {
@@ -521,7 +539,7 @@ function playButtonHandler(e) {
       trackNum = e.target.closest('.track_play_auxiliary').getAttribute('data-tracknum'),
       listTarget = isFeed ? 'feed' : 'release';
   
-  switchLists(listTarget);
+  switch_lists({switch_to: listTarget});
   let playlistLength = bcplayer._playlist.length();
 
   console.log(`about to play ${trackId}, #${trackNum} in playlist`);

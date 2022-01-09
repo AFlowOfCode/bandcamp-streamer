@@ -92,12 +92,10 @@ export function observeTotal(page, parent) {
       }        
       // not all stories are playable tracks
       numTracks = document.querySelectorAll('.story-innards .track_play_auxiliary').length;
-      if (numTracks > feedPlaylistLength) {
+      if (numTracks > bcplayer.feed_playlist_length) {
         bindPlayButtons();
-        if (currentList === 'feed') {
-          checkDuplicates();
-        }
-        for (let i = feedPlaylistLength; i < numTracks; i++) {
+        if (currentList === 'feed') checkDuplicates();
+        for (let i = bcplayer.feed_playlist_length; i < numTracks; i++) {
           if (bcplayer._playlist._playlist[i]) {
             setPrice(bcplayer._playlist._playlist[i].id);              
           } else {
