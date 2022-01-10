@@ -369,14 +369,18 @@ export function setPrice(id) {
 function copyScrollAddedTracks() {
   /* the new feed tracks get appended to the currently playing playlist
      this doesn't affect the canonical release playlist since it is stored in releasePlaylist
-     so releasePlaylistLength will always be the starting index of the new tracks */
+     however if multiple expansions happen while release list is playing, need to keep track
+     and then reset upon switching back to feed so releasePlaylistLength will always be the 
+     starting index of the new tracks */
   // console.log(`release playlist length start: ${releasePlaylistLength} & end: ${bcplayer._playlist.length()}`);
   if (bcplayer._playlist.length() > releasePlaylistLength) {
-    console.log(`${bcplayer._playlist.length() - releasePlaylistLength} tracks added by scrolling`);
+    const added_track_count = bcplayer._playlist.length() - releasePlaylistLength;
+    console.log(`${added_track_count} tracks added by scrolling`);
     for (let i = releasePlaylistLength; i < bcplayer._playlist.length(); i++) {
       setPrice(bcplayer._playlist._playlist[i].id);
       bcplayer.feed_playlist.push(bcplayer._playlist._playlist[i]);
     }
+    releasePlaylistLength += added_track_count;
     bcplayer.feed_playlist_length = bcplayer.feed_playlist.length;
     console.log('new feed playlist length', bcplayer.feed_playlist_length);
   } 
@@ -438,6 +442,8 @@ function switch_lists({switch_to} = {}) {
     // switching from release to feed - any playlist expansion has already been dealt with
     bcplayer._playlist.load(bcplayer.feed_playlist);
     currentList = 'feed';
+    // reset to the original length in case tracks were added
+    releasePlaylistLength = releasePlaylist.length;
   }
   console.log(`switched list to ${switch_to}`, bcplayer._playlist._playlist);
 }
