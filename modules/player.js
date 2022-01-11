@@ -54,20 +54,20 @@ export function addFunctions(colplayer) {
       }
       setQueueTitles(shufQueue);
     } else {
-      let unshuffled = colplayer.currentPlaylist === 'albums' ? colplayer.albumPlaylist 
-                     : colplayer.currentPlaylist === 'wish' ? colplayer.wishPlaylist 
-                     : colplayer.collectionPlaylist,
-          regQueue   = colplayer.currentPlaylist === 'albums' ? colplayer.albumQueueTitles 
-                     : colplayer.currentPlaylist === 'wish' ? colplayer.wishQueueTitles
-                     : colplayer.queueTitles,
-          el         = document.getElementById('shuffler');
+      const unshuffled = colplayer.currentPlaylist === 'albums' ? colplayer.albumPlaylist 
+                       : colplayer.currentPlaylist === 'wish' ? colplayer.wishPlaylist 
+                       : colplayer.collectionPlaylist,
+            regQueue   = colplayer.currentPlaylist === 'albums' ? colplayer.albumQueueTitles 
+                       : colplayer.currentPlaylist === 'wish' ? colplayer.wishQueueTitles
+                       : colplayer.queueTitles,
+            shuffler   = document.getElementById('shuffler');
 
       console.log('unshuffling');
       colplayer.player2.setTracklist(unshuffled);
       setQueueTitles(regQueue);
       setCurrentEl(document.getElementById(unshuffled[0].domId));
       colplayer.isShuffled = false;
-      el.innerText = '🔀 (shuffle!)';      
+      if (shuffler) shuffler.innerText = '🔀 (shuffle!)';      
     }
   }; // colplayer.shuffle()
 

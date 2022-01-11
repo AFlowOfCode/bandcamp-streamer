@@ -402,7 +402,7 @@ function switch_playlists({init=false, switch_to} = {}) {
       if (header) header.innerText = 'wishlist';
       if (colplayer.isOwner) {
         switcher.innerText = '';
-        shuffler.classList.remove('hidden');
+        if (shuffler) shuffler.classList.remove('hidden');
       }
     } else if (switch_to.indexOf('search') > -1) {
       const search_type = switch_to.split('-')[0];
