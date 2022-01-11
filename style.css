@@ -1,3 +1,8 @@
+/* used during full collection/wishlist load */
+html.loading {
+    cursor: progress;
+}
+
 #player-controls-container {
     height: 48px;
     position: fixed;

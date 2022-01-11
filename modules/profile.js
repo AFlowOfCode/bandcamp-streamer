@@ -555,6 +555,10 @@ export function getItemKey(item) {
  * @param {string} tab_name - eg 'collection'
  */
 export function init_true_view_all(tab_name) {
+  const unloaded_tracks = CollectionGrids[tab_name].itemCount - CollectionGrids[tab_name].sequence.length;
+  // only modify buttons if enough unloaded items to warrant it
+  if (unloaded_tracks <= 20) return;
+
   const btn_wrap = document.querySelector(`#${tab_name}-items .show-button`),
         show_btn = btn_wrap.querySelector('.show-more'),
         show_btn_clone = show_btn.cloneNode(true);
@@ -567,10 +571,15 @@ export function init_true_view_all(tab_name) {
 }
 
 function load_more_items(tab_name) {
+  const html = document.querySelector('html'),
+        status = document.querySelector('#playlist-status');
   // batchSize is how many it loads at once - too many & browser has trouble, too little & it takes too long
   // default is 20
   CollectionGrids[tab_name].batchSize = 250;
   if (CollectionGrids[tab_name].sequence.length !== CollectionGrids[tab_name].itemCount) {
+    html.classList.add('loading');
+    if (status) status.innerText = 'Loading... be patient if there are a lot of items!';
+
     CollectionGrids[tab_name].paginate().then((res) => {
       // res = the array of items
       // res[n].also_collected_count = num collections it appears in
@@ -578,5 +587,8 @@ function load_more_items(tab_name) {
       console.log('loaded', CollectionGrids[tab_name].sequence.length, 'of', CollectionGrids[tab_name].itemCount);
       load_more_items(tab_name);
     });
+  } else {
+    html.classList.remove('loading');
+    if (status) status.innerText = '';
   }
 }

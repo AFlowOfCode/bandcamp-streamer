@@ -20,10 +20,12 @@ console.log('Bandcamp Streamer! (v1.3)');
         pagedata = jQuery("#pagedata").data("blob");
 
   // using more globals due to split into modules
-  // TODO: these should be prefixed or otherwise encapsulated
+  // TODO: these should be namespaced
   window.bcplayer = bcplayer;
   window.colplayer = colplayer;
   window.pagedata = pagedata;
+  // record original document title for updating with track/artist
+  window.originalTitle = window.document.title;
 
   // some useful functions
   // colplayer.player2.currentTrackIndex();
@@ -92,9 +94,6 @@ console.log('Bandcamp Streamer! (v1.3)');
   window.currentList = 'feed';
   window.pausedTrack = undefined;
   window.nowPlaying = document.getElementById('track_play_waypoint');
-
-  // record original document title for updating with track/artist
-  window.originalTitle = window.document.title;
 
   initFeedPlaylist(FeedPlaylist);
 
