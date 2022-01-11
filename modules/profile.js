@@ -60,9 +60,22 @@ export function loadCollection(tab) {
 
       // need to wait for items to show up
       setTimeout(() => {
-        const dom_list = document.querySelectorAll('#search-items-container .track_play_hilite');
+        const dom_list = document.querySelectorAll('#search-items-container .track_play_hilite'),
+              playlist_name = `${result.gridType}-search`,
+              is_same_tab_search = colplayer.currentPlaylist === playlist_name;
+
         colplayer[`${result.gridType}_search_playlist`] = [];
         colplayer[`${result.gridType}_search_queue_titles`] = [];
+
+        // if playing from a search playlist then search again, need to reset the playlist
+        // or subsequent playlists will be broken
+        if (is_same_tab_search) {
+          // this needs to be manually loaded after an album is clicked
+          colplayer.pending_playlist_name = `${result.gridType}-search`;
+          colplayer[`${result.gridType}_search_playlist`] = [];
+          colplayer.is_same_tab_search = true;
+        }
+
         // keep track of missing tracks so data-searchnum gets the right index in the wishlist-search playlist
         // this number is incremented in add_to_playlist if a track can't be played
         // then subtracted from the index before setting the attribute
@@ -71,18 +84,27 @@ export function loadCollection(tab) {
 
         // trigger playlist build, then switch to it if user plays from it
         for (let i = 0; i < dom_list.length; i++) {
-          console.log('adding search result to playlist', i);
+          // console.log('adding search result to playlist', i);
           add_to_playlist({
             dom_list,
             tracklist: colplayer[`${result.gridType}_search_results`],
             playlist: colplayer[`${result.gridType}_search_playlist`],
             title_list: colplayer[`${result.gridType}_search_queue_titles`],
-            list_name: `${result.gridType}-search`,
+            list_name: playlist_name,
             index: i,
             is_owner
           }); 
         }
+        console.log(`added ${dom_list.length - colplayer.missing_search_tracks} tracks to search result playlist`);
         replaceClickHandlers();
+        /* on search playlist, clicking transport album art swaps back to non-search playlist instead of
+           just scrolling to the album art - need to store then override BC's normal handler for that event
+           to prevent this disruption */
+        window.orig_trablumUrlClick_handler = BCEvents.handlers["player2.tralbumUrlClick"][0];
+        BCEvents.handlers["player2.tralbumUrlClick"][0] = (item) => {
+          const itemContainer = colplayer.currentItemEl();
+          Dom.scrollToElement(itemContainer.filter(":visible"), -160);
+        }
       }, 1000); // setTimeout
     }
   });
@@ -316,7 +338,15 @@ function push_track({track, item_id, dom_id, playlist, title_list, list_name} = 
 }
 
 function switch_playlists({init=false, switch_to} = {}) {
-  console.log('switching playlists, init:', init, 'switching to', switch_to);
+  const switch_from = colplayer.currentPlaylist;
+  console.log('switching playlists, init:', init, 'switching to', switch_to, 'from', switch_from);
+
+  // replace the overridden handler for search playlist transport album art click with the original 
+  if (switch_from?.indexOf('search') > -1) {
+    console.log('replacing trablumurlclick handler');
+    BCEvents.handlers["player2.tralbumUrlClick"][0] = window.orig_trablumUrlClick_handler;
+  }
+  // unshuffle
   if (colplayer.isShuffled) colplayer.shuffle(); 
   let queueHeader = document.querySelector('.queue-header h2');
   if (init) {
@@ -375,16 +405,15 @@ function switch_playlists({init=false, switch_to} = {}) {
         shuffler.classList.remove('hidden');
       }
     } else if (switch_to.indexOf('search') > -1) {
-      let search_type = switch_to.split('-')[0],
-          search_prefix = search_type === 'wish' ? 'wishlist' : 'collection';
-      console.log('search result tracklist', switch_to, colplayer[`${search_prefix}_search_playlist`]);
-      colplayer.player2.setTracklist(colplayer[`${search_prefix}_search_playlist`]);
-      setQueueTitles(colplayer[`${search_prefix}_search_queue_titles`]);
+      const search_type = switch_to.split('-')[0];
+      console.log('search result tracklist', switch_to, colplayer[`${search_type}_search_playlist`]);
+      colplayer.player2.setTracklist(colplayer[`${search_type}_search_playlist`]);
+      setQueueTitles(colplayer[`${search_type}_search_queue_titles`]);
       colplayer.currentPlaylist = switch_to;
       if (header) header.innerText = 'search results';
       if (colplayer.isOwner) {
         switcher.innerText = '';
-        shuffler.classList.add('hidden');
+        if (shuffler) shuffler.classList.add('hidden');
       } 
     } else {        
       // default to favorites when switching from wish or search
@@ -478,6 +507,11 @@ function replaceClickHandlers(){
 
 function playerHandler(ev) {
   ev.stopPropagation();
+  if (colplayer.is_same_tab_search) {
+    console.log(`updating ${colplayer.pending_playlist_name} with new results`);
+    switch_playlists({switch_to: colplayer.pending_playlist_name});
+    colplayer.is_same_tab_search = false;
+  }
   console.log('playing track itemkey:', colplayer.currentItemKey(), 'current playlist', colplayer.currentPlaylist);
   let item = ev.target.closest(".collection-item-container"),
       grid = ev.target.closest(".collection-grid"),
@@ -495,8 +529,8 @@ function playerHandler(ev) {
   } else if (gridType === 'collection' && ['albums', 'favorites'].indexOf(colplayer.currentPlaylist) === -1) {
     // default to favorites if switching out of wish or search
     switch_playlists({switch_to: 'favorites'});
-  } else if (is_wish_search && colplayer.currentPlaylist !== 'wish-search') {
-    switch_playlists({switch_to: 'wish-search'});
+  } else if (is_wish_search && colplayer.currentPlaylist !== 'wishlist-search') {
+    switch_playlists({switch_to: 'wishlist-search'});
   } else if (is_collection_search && colplayer.currentPlaylist !== 'collection-search') {
     switch_playlists({switch_to: 'collection-search'});
   }
@@ -504,7 +538,7 @@ function playerHandler(ev) {
   let tracknum = colplayer.isShuffled ? item.getAttribute('data-shufflenum') :
                  colplayer.currentPlaylist === 'favorites' || colplayer.currentPlaylist === 'wish' ? item.getAttribute('data-tracknum') :
                  // only wish search uses data-searchnum attr 
-                 colplayer.currentPlaylist === 'wish-search' && is_wish_search ? item.getAttribute('data-searchnum') :
+                 colplayer.currentPlaylist === 'wishlist-search' && is_wish_search ? item.getAttribute('data-searchnum') :
                  item.getAttribute('data-firsttrack'),          
       tralbumId = item.getAttribute("data-tralbumid"),
       tralbumType = item.getAttribute("data-tralbumtype"),
@@ -546,7 +580,7 @@ export function getItemKey(item) {
   let itemId = item.getAttribute("data-itemid"),
       itemType = item.getAttribute("data-itemtype").slice(0, 1),
       itemKey = itemType + itemId;
-  console.log('got item key', itemKey);
+  // console.log('got item key', itemKey);
   return itemKey;
 }
 
