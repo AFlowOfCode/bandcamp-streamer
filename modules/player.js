@@ -1,4 +1,4 @@
-import { setQueueTitles, getItemKey } from './profile.js';
+import { setQueueTitles, getItemKey, create_shuffler } from './profile.js';
 
 export function addFunctions(colplayer) {
   // shuffle playlist
@@ -67,7 +67,7 @@ export function addFunctions(colplayer) {
       setQueueTitles(regQueue);
       setCurrentEl(document.getElementById(unshuffled[0].domId));
       colplayer.isShuffled = false;
-      if (shuffler) shuffler.innerText = '🔀 (shuffle!)';      
+      if (!shuffler) create_shuffler({place_in_dom: true});
     }
   }; // colplayer.shuffle()
 

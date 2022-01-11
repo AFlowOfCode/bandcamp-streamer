@@ -3,6 +3,12 @@ html.loading {
     cursor: progress;
 }
 
+/* search results hidden until click handlers set */
+html.search-results-hidden #collection-search-grid, 
+html.search-results-hidden #wishlist-search-grid {
+    display: none;
+}
+
 #player-controls-container {
     height: 48px;
     position: fixed;

@@ -51,6 +51,9 @@ export function loadCollection(tab) {
       console.log('search complete', colplayer.searchResults);
       colplayer[`${result.gridType}_search_results`] = colplayer.searchResults;
 
+      // hide search results until click handlers are set
+      document.querySelector('html').classList.add('search-results-hidden');
+
       // have to loop through the tracklists & see if any results are albums 
       // loop is needed since it's possible many owner collection results may be single tracks      
       // but a tracklist w/ more than one track indicates it's an owner collection search
@@ -204,9 +207,11 @@ export function buildWishPlaylist(index) {
   if (index === 0) colplayer.wish_missing = 0;
   let wishItems = document.querySelectorAll('#wishlist-items .track_play_hilite'),
       wishPlaylist =       index === 0 ? [] : colplayer.wishPlaylist.slice(),
-      wishQueueTitles =    index === 0 ? [] : colplayer.wishQueueTitles.slice();
+      wishQueueTitles =    index === 0 ? [] : colplayer.wishQueueTitles.slice(),
+      fave_switcher = document.getElementById('playlist-switcher');
 
   if (wishItems.length === 0) return;
+  if (fave_switcher) fave_switcher.classList.add('hidden');
 
   for (let i = index; i < wishItems.length; i++) {
     add_to_playlist({
@@ -337,14 +342,31 @@ function push_track({track, item_id, dom_id, playlist, title_list, list_name} = 
   // console.log(`pushed ${track.trackData.artist} - ${track.trackData.title} to ${list_name} playlist`);
 }
 
+// place_in_dom used if missing
+export function create_shuffler({place_in_dom=false} = {}) {
+  const queueHeader = document.querySelector('.queue-header h2'),
+        shuffler = document.createElement('span');
+  console.log('creating shuffler, might attach to', queueHeader);
+  shuffler.id = 'shuffler';
+  if (place_in_dom) {
+    queueHeader.appendChild(shuffler);
+    shuffler.innerText = '🔀 (shuffle!)';
+    shuffler.addEventListener('click', () => colplayer.shuffle());
+  }
+  return shuffler;
+}
+
 function switch_playlists({init=false, switch_to} = {}) {
   const switch_from = colplayer.currentPlaylist;
   console.log('switching playlists, init:', init, 'switching to', switch_to, 'from', switch_from);
 
   // replace the overridden handler for search playlist transport album art click with the original 
   if (switch_from?.indexOf('search') > -1) {
-    console.log('replacing trablumurlclick handler');
+    // console.log('replacing trablumurlclick handler & shuffler');
     BCEvents.handlers["player2.tralbumUrlClick"][0] = window.orig_trablumUrlClick_handler;
+    const shuffler = document.getElementById('shuffler');
+    if (!shuffler) shuffler = create_shuffler({place_in_dom: true});
+    shuffler.classList.remove('hidden');
   }
   // unshuffle
   if (colplayer.isShuffled) colplayer.shuffle(); 
@@ -355,12 +377,11 @@ function switch_playlists({init=false, switch_to} = {}) {
         parent = document.querySelector('#collection-player .controls-extra'),
         startList = colplayer.isOwner ? 'albums' : 'favorites',
         header = document.createElement('span'),
-        shuffle = document.createElement('span');
+        shuffler = create_shuffler();
 
     header.id = 'playlist-header';
     header.innerText = startList;
-    shuffle.id = 'shuffler';
-    shuffle.innerText = '🔀 (shuffle!)';
+    shuffler.innerText = '🔀 (shuffle!)';
 
     status.id = 'playlist-status';
     status.title = 'the playlist will update between tracks to preserve continuity and avoid disrupting the currently playing track';
@@ -372,7 +393,7 @@ function switch_playlists({init=false, switch_to} = {}) {
       queueHeader.innerText = 'now playing ';
       queueHeader.appendChild(header);
       // can only shuffle own collection & wishlist
-      if (colplayer.isOwner) queueHeader.appendChild(shuffle);
+      if (colplayer.isOwner) queueHeader.appendChild(shuffler);
     }
 
     // only owners have full albums & can shuffle
@@ -402,7 +423,8 @@ function switch_playlists({init=false, switch_to} = {}) {
       if (header) header.innerText = 'wishlist';
       if (colplayer.isOwner) {
         switcher.innerText = '';
-        if (shuffler) shuffler.classList.remove('hidden');
+        if (!shuffler) shuffler = create_shuffler({place_in_dom: true});
+        shuffler.classList.remove('hidden');
       }
     } else if (switch_to.indexOf('search') > -1) {
       const search_type = switch_to.split('-')[0];
@@ -428,7 +450,6 @@ function switch_playlists({init=false, switch_to} = {}) {
         if (header) header.innerText = 'favorite tracks';
         if (colplayer.isOwner) {
           shuffler.classList.remove('hidden');
-          // shuffler.style.display = 'inline-block';
           switcher.innerText = 'Switch to full albums';  
         }
       } else {
@@ -498,11 +519,14 @@ export function updateTracklists(num) {
 
 function replaceClickHandlers(){
   console.log('replacing click handlers');
-  let players = document.getElementsByClassName('track_play_auxiliary');
+  const players = document.getElementsByClassName('track_play_auxiliary'),
+        html = document.querySelector('html');
   console.log(`found ${players.length} playables, first:`, players[0]);
   Array.from(players).forEach((player) => {
     player.addEventListener('click', playerHandler);
   });
+  // prevent clicking any items before playlist is set up
+  html.classList.remove('search-results-hidden');
 }
 
 function playerHandler(ev) {
