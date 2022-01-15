@@ -1,4 +1,7 @@
-import { bindPlayButtons, checkDuplicates, setPrice } from './feed.js';
+import { 
+  bind_play_buttons, set_track_numbers, validate_feed_integrity, checkDuplicates, setPrice,
+  rebuild_feed_playlist
+} from './feed.js';
 import { buildPlaylists, buildWishPlaylist, init_true_view_all } from './profile.js';
 
 export function countInArray(array, value) {
@@ -6,7 +9,7 @@ export function countInArray(array, value) {
 }
 
 export function bindControlKeys({bcplayer, colplayer, albumplayer} = {}) {
-  console.log('binding control keys', arguments);
+  console.log('binding control keys');
   // bind spacebar to playpause
   // this should be an option to enable
   // browsers auto scroll down w/ spacebar press, which some people may like
@@ -77,32 +80,7 @@ export function observeTotal(page, parent) {
     console.log('detected playlist expansion');
     let numTracks;
     if (page === 'feed') {
-      // bcplayer._playlist._loadedtrack stays same as what is currently playing
-      // bcplayer._playlist._track changes right away to the first track number from the next batch
-      // this is incorrect, so we change it back otherwise artwork gets out of sync 
-      // when track that was playing during expansion is still playing & then paused
-      // (bcplayer._playlist.first_playable_track also changes like _track but doesn't matter)
-      if (currentList === 'feed') {
-        let currentIndex = +bcplayer._playlist._loadedtrack;
-        console.log('current track index playing', currentIndex);
-        feedPlayer._stillPlaying = currentIndex;
-        bcplayer._playlist._track = currentIndex;
-        feedPlayer._nextTrack = currentIndex + 1;
-        console.log('set force track (expansion):',feedPlayer._nextTrack);
-      }        
-      // not all stories are playable tracks
-      numTracks = document.querySelectorAll('.story-innards .track_play_auxiliary').length;
-      if (numTracks > bcplayer.feed_playlist_length) {
-        bindPlayButtons();
-        if (currentList === 'feed') checkDuplicates();
-        for (let i = bcplayer.feed_playlist_length; i < numTracks; i++) {
-          if (bcplayer._playlist._playlist[i]) {
-            setPrice(bcplayer._playlist._playlist[i].id);              
-          } else {
-            console.log(`track ${i} doesn't seem to exist`, bcplayer._playlist._playlist[i]);
-          }
-        }
-      }
+      handle_feed_page_expansion();
     } else {
       numTracks = page === 'collection' ? window.CollectionData.sequence.length : window.WishlistData.sequence.length;
       // adding more tracks to player unshuffles playlist automatically
@@ -151,4 +129,46 @@ export function observeTotal(page, parent) {
     // console.log(`there are now ${numTracks} playable tracks in feed (minus any dead tracks)`, bcplayer._playlist._playlist);    
   });
   observer.observe(parent, options);
+}
+
+function handle_feed_page_expansion() {
+  if (currentList === 'feed') {
+    /* 
+      bcplayer._playlist._loadedtrack stays same as what is currently playing
+      bcplayer._playlist._track changes right away to the first track number from the next batch
+      This is incorrect, so we change it back otherwise artwork gets out of sync 
+      when track that was playing during expansion is still playing & then paused
+      (bcplayer._playlist.first_playable_track also changes like _track but doesn't matter) 
+    */
+    let currentIndex = +bcplayer._playlist._loadedtrack;
+    console.log('current track index playing', currentIndex);
+    feedPlayer._stillPlaying = currentIndex;
+    bcplayer._playlist._track = currentIndex;
+    feedPlayer._nextTrack = currentIndex + 1;
+    console.log('set force track (expansion):',feedPlayer._nextTrack);
+  }        
+
+  // not all stories are playable tracks
+  const num_playable_stories = document.querySelectorAll('.story-innards .track_play_auxiliary').length;
+  if (num_playable_stories > bcplayer.feed_playlist_length) {
+    
+    bind_play_buttons();
+    if (currentList === 'feed') {
+      // need to set tracknums because integrity validation will only rebuild (and assign tracknums) if it finds dupes
+      set_track_numbers();
+      validate_feed_integrity(bcplayer._playlist._playlist);
+    } else if (currentList === 'release') {
+      // rebuild handles integrity & tracknums
+      rebuild_feed_playlist();
+    }
+
+    // set prices on each new feed item
+    for (let i = bcplayer.feed_playlist_length; i < num_playable_stories; i++) {
+      if (bcplayer._playlist._playlist[i]) {
+        setPrice(bcplayer._playlist._playlist[i].id);              
+      } else {
+        console.log(`track ${i} doesn't seem to exist`, bcplayer._playlist._playlist[i]);
+      }
+    }
+  }
 }

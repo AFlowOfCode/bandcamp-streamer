@@ -76,7 +76,7 @@ html.search-results-hidden #wishlist-search-grid {
 
 /* show more button */
 .expand-container.show-button {
-    display: flex;
+    display: flex !important;
     justify-content: center;
 }
 

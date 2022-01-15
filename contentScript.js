@@ -1,7 +1,7 @@
 import { bindControlKeys, observeTotal } from './modules/shared.js';
 import { replaceFunctions } from './modules/overrides.js';
 import { addFunctions, catchErrors } from './modules/player.js';
-import { FeedPlaylist, initFeedPlaylist, setPrice, bindPlayButtons, checkDuplicates } from './modules/feed.js';
+import { FeedPlaylist, initFeedPlaylist } from './modules/feed.js';
 import { loadCollection } from './modules/profile.js';
 
 /***************************
@@ -90,9 +90,8 @@ console.log('Bandcamp Streamer! (v1.3)');
 
   window.originalPlaylist = bcplayer ? bcplayer._playlist._playlist : '';
   window.releasePlaylist = [];
-  window.releasePlaylistLength = undefined;
+  window.releasePlaylistLength = 0;
   window.currentList = 'feed';
-  window.pausedTrack = undefined;
   window.nowPlaying = document.getElementById('track_play_waypoint');
 
   initFeedPlaylist(FeedPlaylist);
