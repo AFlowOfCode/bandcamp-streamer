@@ -42,6 +42,7 @@ Firefox: [https://addons.mozilla.org/en-US/firefox/addon/bandcamp-streamer/](htt
 
 ### What this extension does not do
   * Allow you to add a full album to your wishlist and then stream the whole thing. Playing only the first or featured track of an album in your wishlist is a Bandcamp limitation that this extension does not try to circumvent. You can do two things: support the artist and buy the album (best option for full flexibility + cool factor), or add each individual track from the album to your wishlist if possible. 
+  * Attempt to track you or any of your data in any way, or communicate with any third parties for any reason. This is a 100% privacy respecting extension.
 
 ### Support development
   * If you appreciate the extension, consider showing some support! Please leave a rating and some feedback, it's always motivating to hear from people who enjoy and find it useful. Suggestions and bug reports are always welcome, preferably on Github.
