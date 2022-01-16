@@ -28,7 +28,23 @@ export function replaceFunctions(colplayer) {
         itemKey = getItemKey(el);
     // console.log("domId:", newTrack.domId, el);
     console.log('last el', colplayer.lastEl?.id, 'current el', el.id);
-    togglePlayButtons({item: el, is_playing: true});
+
+    /*
+      If dom item previously appeared in non-search grid (& probably vice versa), 
+      it will now exist twice in the DOM (with the same id).
+      The 2nd one, which is now being displayed, will no longer have its buttons toggled
+      unless we figure out which one is currently being displayed.
+      Toggling all existing elements is just a bandaid
+      TODO: determine which is visible, toggle it, & make sure the transport points to it
+      (since transport album art also has the wrong one now, & scrolls to bottom of page looking for it)
+    */
+    const item_instances = document.querySelectorAll(`#${newTrack.domId}`);
+    if (item_instances.length > 1) {
+      console.log(`item ${newTrack.domId} appears multiple times`, item_instances.length);
+      item_instances.forEach(instance => togglePlayButtons({item: instance, is_playing: true}));
+    } else {
+      togglePlayButtons({item: el, is_playing: true});
+    }
 
     self._playlist.load([newTrack.trackData]);
     self.duration(self._playlist.duration());
@@ -36,9 +52,15 @@ export function replaceFunctions(colplayer) {
     colplayer.currentItemKey(itemKey);
 
     // set play button on previous item
-    togglePlayButtons({item: colplayer.lastEl, is_playing: false});
-    colplayer.lastEl = el;
+    const prev_item_instances = document.querySelectorAll(`#${colplayer.lastEl?.id}`);
+    if (prev_item_instances?.length > 1) {
+      console.log(`prev item ${colplayer.lastEl.id} appears multiple times`, prev_item_instances.length);
+      prev_item_instances.forEach(instance => togglePlayButtons({item: instance, is_playing: false}));
+    } else {
+      togglePlayButtons({item: colplayer.lastEl, is_playing: false});
+    }
 
+    colplayer.lastEl = el;
     window.document.title = `${self.currentTrack().trackTitle} by ${self.currentTrack().trackData.artist} | ${window.originalTitle}`;
     return true;
   };

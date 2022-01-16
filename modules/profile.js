@@ -531,11 +531,14 @@ function replaceClickHandlers(){
 
 function playerHandler(ev) {
   ev.stopPropagation();
+  console.log('clicked on', ev.target);
+
   if (colplayer.is_same_tab_search) {
     console.log(`updating ${colplayer.pending_playlist_name} with new results`);
     switch_playlists({switch_to: colplayer.pending_playlist_name});
     colplayer.is_same_tab_search = false;
   }
+
   console.log('playing track itemkey:', colplayer.currentItemKey(), 'current playlist', colplayer.currentPlaylist);
   let item = ev.target.closest(".collection-item-container"),
       grid = ev.target.closest(".collection-grid"),

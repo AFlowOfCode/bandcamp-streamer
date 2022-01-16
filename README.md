@@ -17,6 +17,7 @@ Firefox: [https://addons.mozilla.org/en-US/firefox/addon/bandcamp-streamer/](htt
 ### General features
   * Volume control
   * Spacebar play/pause, L/R arrow keys to skip to previous/next track in the playlist
+  * Beta: Load entire collections & wishlists in one click (be patient if there are a lot of items!)
       
 ### Feed page features 
   * Nonstop streaming from 2 separate playlists: fan activity or new releases
@@ -26,18 +27,18 @@ Firefox: [https://addons.mozilla.org/en-US/firefox/addon/bandcamp-streamer/](htt
   * Stream full albums continuously (moves onto next album after finishing) 
   * Stream a playlist of your favorite track from each release (plays first track from album if favorite not set)
   * Shuffle either album or favorites playlist 
-  * Load entire collection in one click (be patient if there are a lot of items!)
   * Continuous streaming of search results (full albums only)
 
 ### Wishlist page features
   * Stream all tracks continuously
   * Shuffle wishlist tracks
-  * Load entire wishlist in one click (be patient if there are a lot of items!)
   * Continuous streaming of search results
 
 ### Known issues
-  * If the collection/wishlist playlist has been shuffled when more tracks are added, it becomes unshuffled and playback stops. It is recommended to load all the desired tracks to the page first, then shuffle and start the playlist.
-  * If you are playing from collection/wishlist search results & click to another tab, the current track will continue playing but the playlist will be destroyed 
+  * If the collection/wishlist playlist has been shuffled when more tracks are added, it becomes unshuffled and playback stops. It is recommended to load all the desired tracks to the page first, then shuffle and start the playlist.  
+  * If you are playing from collection/wishlist search results & click to another tab, the current track will continue playing but the playlist will be lost.  
+  * If an item has been displayed in both collection or wishlist tab & the tab's search results, clicking on the item in the bottom player bar won't scroll to the correct location.  
+  * Loading entire collections/wishlists with over ~1000 items may be buggy
 
 ### What this extension does not do
   * Allow you to add a full album to your wishlist and then stream the whole thing. Playing only the first or featured track of an album in your wishlist is a Bandcamp limitation that this extension does not try to circumvent. You can do two things: support the artist and buy the album (best option for full flexibility + cool factor), or add each individual track from the album to your wishlist if possible. 
@@ -55,23 +56,22 @@ Firefox: [https://addons.mozilla.org/en-US/firefox/addon/bandcamp-streamer/](htt
 ### Changelog
 
 ##### 1.3.0
-  * Button to load entire collection/wishlist at one time
-  * Playlists for collection/wishlist search results
-  * Add icons for shuffle/unshuffle  
-  
-  * Fix playlist switch error when only 1 track in collection or wishlist
+  * Button to load entire collection/wishlist at one time  
+  * Playlists for collection/wishlist search results  
+  * Add icons for shuffle/unshuffle    
+  * Fix playlist switch error when only 1 track in collection or wishlist  
   * Fix duplicate tracks in feed breaking playlist order & item play buttons
 
 ##### 1.2.2
-  * Put track artist & title first in browser tab name for quick visibility
-  * Fix collection playlist hanging on other users' subscriber only items
+  * Put track artist & title first in browser tab name for quick visibility  
+  * Fix collection playlist hanging on other users' subscriber only items  
   * Fix rare condition where tracks not added to playlist after clicking "view all" on collection/wishlist
 
 ##### 1.2.1
   * Fix issue with pausing by clicking on album art and unexpected playlist halting in a couple scenarios
 
 ##### 1.2  
-  * Shuffle for wishlist
+  * Shuffle for wishlist  
   * New icon
 
 ## Trademarks
