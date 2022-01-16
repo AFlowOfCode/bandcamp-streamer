@@ -114,9 +114,11 @@ export function loadCollection(tab) {
 
 } // loadCollection()
 
+// TODO: combine build playlist functions - need serious refactoring
 export function buildPlaylists(index, isOwner) {
   console.log('building playlists, index:',index, 'is owner:', isOwner);
   // index is 0 on first run, > 0 when collection view expanded
+  if (index === 0) colplayer.col_missing = 0;
   let items = document.querySelectorAll('#collection-items .track_play_hilite'),
       collectionPlaylist = index === 0 ? [] : colplayer.collectionPlaylist.slice(),
       albumPlaylist =      index === 0 || !isOwner ? [] : colplayer.albumPlaylist.slice(),
@@ -136,7 +138,10 @@ export function buildPlaylists(index, isOwner) {
       index: i,
       is_owner: isOwner
     }); 
-    items[i].setAttribute('data-tracknum', i); 
+    if (items[i].getAttribute('data-trackid')) {
+      // col_missing is incremented in add_to_playlist
+      items[i].setAttribute('data-tracknum', i - colplayer.col_missing); 
+    }
   } // end collection/album tracklist builder loop 
 
   if (isOwner) {
@@ -298,6 +303,9 @@ function add_to_playlist({
       console.log('total missing from wish playlist', colplayer.wish_missing);
     } else if (list_name.indexOf('search') > -1) {
       colplayer.missing_search_tracks++;
+    } else if (list_name === 'collection') {
+      colplayer.col_missing++;
+      console.log('total missing from collection playlist', colplayer.col_missing);
     }
   } else if (list_name === 'wishlist-search') {
     dom_list[index].setAttribute('data-searchnum', index - colplayer.missing_search_tracks);
@@ -346,7 +354,7 @@ function push_track({track, item_id, dom_id, playlist, title_list, list_name} = 
 export function create_shuffler({place_in_dom=false} = {}) {
   const queueHeader = document.querySelector('.queue-header h2'),
         shuffler = document.createElement('span');
-  console.log('creating shuffler, might attach to', queueHeader);
+  // console.log('creating shuffler, might attach to', queueHeader);
   shuffler.id = 'shuffler';
   if (place_in_dom) {
     queueHeader.appendChild(shuffler);
@@ -404,10 +412,10 @@ function switch_playlists({init=false, switch_to} = {}) {
       switcher.style.marginRight = '10px';
       switcher.innerText = 'Switch to favorite tracks';
       parent.prepend(switcher);
-      parent.prepend(status);
       switcher.addEventListener('click', () => switch_playlists({switch_to: 'favorites'}));
       document.getElementById('shuffler').addEventListener('click', () => colplayer.shuffle());
     }
+    parent.prepend(status);
     
     // init was sent from wish tab
     if (switch_to === 'wish') switch_playlists({switch_to: 'wish'});
@@ -634,10 +642,11 @@ export function init_true_view_all(tab_name) {
 function load_more_items(tab_name) {
   const html = document.querySelector('html'),
         status = document.querySelector('#playlist-status');
+  let   still_more = CollectionGrids[tab_name].sequence.length < CollectionGrids[tab_name].itemCount;
   // batchSize is how many it loads at once - too many & browser has trouble, too little & it takes too long
   // default is 20
   CollectionGrids[tab_name].batchSize = 250;
-  if (CollectionGrids[tab_name].sequence.length !== CollectionGrids[tab_name].itemCount) {
+  if (still_more) {
     html.classList.add('loading');
     if (status) status.innerText = 'Loading... be patient if there are a lot of items!';
 
@@ -645,7 +654,8 @@ function load_more_items(tab_name) {
       // res = the array of items
       // res[n].also_collected_count = num collections it appears in
       // console.log('done loading, response:', res);
-      console.log('loaded', CollectionGrids[tab_name].sequence.length, 'of', CollectionGrids[tab_name].itemCount);
+      still_more = CollectionGrids[tab_name].sequence.length < CollectionGrids[tab_name].itemCount;
+      console.log('loaded', CollectionGrids[tab_name].sequence.length, 'of', CollectionGrids[tab_name].itemCount, 'still more?', still_more);
       load_more_items(tab_name);
     });
   } else {
