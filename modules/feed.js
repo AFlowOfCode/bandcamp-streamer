@@ -80,8 +80,9 @@ export function FeedPlaylist(bcplayer, originalPlaylist) {
 
   // this needs to be done every time new tracks are loaded at bottom 
   // or won't be able to click on newly added tracks (they'd still work via the player prev/next buttons)
-  bind_play_buttons();     
+  bind_play_buttons();
   set_track_numbers();
+
 
   observeTotal('feed', document.getElementById('story-list'));  
 
@@ -598,8 +599,14 @@ function spliceIntoList(list, index, track) {
   let copy = JSON.parse(JSON.stringify(track)),
       trackinfo = new Player.TrackInfo(copy);
   list.splice(index, 0, trackinfo);
-  list[index].tracknum = index;
-  // console.log('spliced track', list[index]);
+  /* 
+    if the track in question happens to be the last one in the playlist, or somehow
+    the index >= list length, splice behaves like push & when trying to assign tracknum
+    list[index] will be undefined, so use the last entry
+  */
+  const real_index = index >= list.length ? list.length - 1 : index;
+  if (list[real_index]) list[real_index].tracknum = index;
+  console.log(`spliced track @ list index ${real_index}`, list[real_index]);
 
   // TrackInfo tracknums will be messed up here but fixed during rebuild
   // console.log('new playlist:', list); 
@@ -698,7 +705,7 @@ export function validate_feed_integrity(feed_playlist) {
         console.log('dupes causing mismatches');
         console.log('playlist track id:', track.id.toString(), 'feed item track id', story_track.id);
         console.log('playlist tracknum:', track.tracknum, 'feed item tracknum', story_track.tracknum);
-        console.log(`feed item ${i} (${story_track.title}) is mismatched with ${track.title}`);
+        console.log(`feed item ${i} ${story_track.tracknum}/${story_track.title} is mismatched with ${track.tracknum}/${track.title}`);
         // this is where we start rebuilding the feed playlist, to save processing power
         starting_index = i;
       }

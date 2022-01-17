@@ -56,6 +56,9 @@ Firefox: [https://addons.mozilla.org/en-US/firefox/addon/bandcamp-streamer/](htt
 
 ### Changelog
 
+##### 1.3.1
+  * Fix error when recovered feed track needs to be added to end of playlist  
+
 ##### 1.3.0
   * Button to load entire collection/wishlist at one time  
   * Playlists for collection/wishlist search results  
