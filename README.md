@@ -56,6 +56,9 @@ Firefox: [https://addons.mozilla.org/en-US/firefox/addon/bandcamp-streamer/](htt
 
 ### Changelog
 
+##### 1.3.2
+  * Fix error on owner collection with unplayable item
+
 ##### 1.3.1
   * Fix error when recovered feed track needs to be added to end of playlist  
 

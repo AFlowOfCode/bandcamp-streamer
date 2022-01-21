@@ -280,10 +280,10 @@ function add_to_playlist({
         is_subscriber_only = dom_list[index].classList.contains('subscriber-item');
   
   // console.log(item_key, tracklist);
-  let track = tracklist[item_key][0];
+  let track = tracklist[item_key] ? tracklist[item_key][0] : undefined;
 
   // if a favorite track is set use that instead of first track in the set
-  if (is_owner && fave_node && list_name.indexOf('search') === -1) {
+  if (is_owner && fave_node && list_name.indexOf('search') === -1 && tracklist[item_key]) {
     console.log('found fave track');
     track = tracklist[item_key][+fave_node.href.slice(fave_node.href.indexOf('?t=') + 3) - 1];
   }
@@ -297,7 +297,7 @@ function add_to_playlist({
                  (is_owner || !is_subscriber_only);
   // console.log('list', list_name, 'can push', can_push);
   if (!can_push) {
-    console.log("missing track", item_key, track.trackData.title);
+    console.log("missing track", item_key, track?.trackData?.title);
     if (list_name === 'wish') {
       colplayer.wish_missing++; 
       console.log('total missing from wish playlist', colplayer.wish_missing);

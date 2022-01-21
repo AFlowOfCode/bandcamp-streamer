@@ -9,7 +9,7 @@ import { loadCollection } from './modules/profile.js';
   * by A Flow of Code      *
   * github.com/aflowofcode *
   **************************/
-console.log('Bandcamp Streamer! (v1.3)');
+console.log('Bandcamp Streamer! (v1.3.2)');
 
 (function(window, document) {
 

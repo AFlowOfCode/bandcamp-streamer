@@ -1,6 +1,6 @@
 {
     "name": "Bandcamp Streamer",
-    "version": "1.3.1",
+    "version": "1.3.2",
     "description": "Continuously stream from Bandcamp feed, collection, & wishlist pages + other cool features.",
     "permissions": [
         "https://bandcamp.com/*/feed",
