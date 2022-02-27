@@ -623,11 +623,12 @@ function playButtonHandler(e) {
       listTarget = isFeed ? 'feed' : 'release';
 
   switch_lists({switch_to: listTarget});
+  // this is null if track is paused
   const currently_playing_id = bcplayer.currently_playing_track()?.id?.toString();
-
   console.log('currently playing:', currently_playing_id);
+
   // if no track has been played but feed playlist expanded & rebuilt, need to load it
-  if (!currently_playing_id) {
+  if (!currently_playing_id && !bcplayer.pausedTrack) {
     console.log('reloading feed playlist');
     bcplayer._playlist.load(bcplayer._playlist._playlist);
   }
@@ -644,6 +645,7 @@ function playButtonHandler(e) {
     if (bcplayer.pausedTrack === trackId) {
       console.log("unpausing", trackId);
       feedPlayer.playpause();
+      bcplayer.pausedTrack = undefined;
     } else {      
       console.log('found track, playing now', +trackNum, bcplayer._playlist._playlist[+trackNum].title);
       feedPlayer._nextTrack = false;
