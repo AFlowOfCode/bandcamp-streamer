@@ -58,6 +58,7 @@ Firefox: [https://addons.mozilla.org/en-US/firefox/addon/bandcamp-streamer/](htt
 
 ##### 1.3.3
   * Fix pause then unpause on feed starting playlist over
+  * Handle duplicate tracks in initial feed batch
 
 ##### 1.3.2
   * Fix error on owner collection with unplayable item

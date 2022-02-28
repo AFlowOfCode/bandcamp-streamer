@@ -112,6 +112,8 @@ export function FeedPlaylist(bcplayer, originalPlaylist) {
     this.observe();
     console.debug('[bandcampFeedPlaylist] injected');
   }
+  // if feed has < 10 tracks, likely there is a duplicate that needs to be handled
+  if (bcplayer.feed_playlist_length < 10) validate_feed_integrity(bcplayer._playlist._playlist);
 } // FeedPlaylist()
 
 export function initFeedPlaylist(FeedPlaylist) {
@@ -718,4 +720,47 @@ export function validate_feed_integrity(feed_playlist) {
   console.log('num tracks in playlist', feed_playlist.length);
   console.log('total mismatched:', num_mismatched);
   if (num_mismatched > 0) rebuild_feed_playlist({starting_index});
+}
+
+// used in mutation observer in shared module
+export function handle_feed_page_expansion() {
+  if (currentList === 'feed') {
+    /*
+      bcplayer._playlist._loadedtrack stays same as what is currently playing
+      bcplayer._playlist._track changes right away to the first track number from the next batch
+      This is incorrect, so we change it back otherwise artwork gets out of sync
+      when track that was playing during expansion is still playing & then paused
+      (bcplayer._playlist.first_playable_track also changes like _track but doesn't matter)
+    */
+    let currentIndex = +bcplayer._playlist._loadedtrack;
+    console.log('current track index playing', currentIndex);
+    feedPlayer._stillPlaying = currentIndex;
+    bcplayer._playlist._track = currentIndex;
+    feedPlayer._nextTrack = currentIndex + 1;
+    console.log('set force track (expansion):',feedPlayer._nextTrack);
+  }
+
+  // not all stories are playable tracks
+  const num_playable_stories = document.querySelectorAll('.story-innards .track_play_auxiliary').length;
+  if (num_playable_stories > bcplayer.feed_playlist_length) {
+
+    bind_play_buttons();
+    if (currentList === 'feed') {
+      // need to set tracknums because integrity validation will only rebuild (and assign tracknums) if it finds dupes
+      set_track_numbers();
+      validate_feed_integrity(bcplayer._playlist._playlist);
+    } else if (currentList === 'release') {
+      // rebuild handles integrity & tracknums
+      rebuild_feed_playlist();
+    }
+
+    // set prices on each new feed item
+    for (let i = bcplayer.feed_playlist_length; i < num_playable_stories; i++) {
+      if (bcplayer._playlist._playlist[i]) {
+        setPrice(bcplayer._playlist._playlist[i].id);
+      } else {
+        console.log(`track ${i} doesn't seem to exist`, bcplayer._playlist._playlist[i]);
+      }
+    }
+  }
 }
