@@ -1,4 +1,4 @@
-import { bindControlKeys, observeTotal } from './modules/shared.js';
+import { bindControlKeys } from './modules/shared.js';
 import { replaceFunctions } from './modules/overrides.js';
 import { addFunctions, catchErrors } from './modules/player.js';
 import { FeedPlaylist, initFeedPlaylist } from './modules/feed.js';
@@ -9,7 +9,7 @@ import { loadCollection } from './modules/profile.js';
   * by A Flow of Code      *
   * github.com/aflowofcode *
   **************************/
-console.log('Bandcamp Streamer! (v1.3.2)');
+console.log('Bandcamp Streamer! (v1.3.3)');
 
 (function(window, document) {
 
@@ -27,13 +27,13 @@ console.log('Bandcamp Streamer! (v1.3.2)');
   // record original document title for updating with track/artist
   window.originalTitle = window.document.title;
 
-  // some useful functions
-  // colplayer.player2.currentTrackIndex();
-  // colplayer.player2.currentTracklist();
-  // colplayer.player2.currentState();
-  // "idle", "paused", "playing"
-  // colplayer.player2.showPlay(); 
-  // true if play button showing (means not playing)
+  /*
+    some useful functions
+    colplayer.player2.currentTrackIndex()
+    colplayer.player2.currentTracklist()
+    colplayer.player2.currentState()      -> "idle", "paused", "playing"
+    colplayer.player2.showPlay()          -> true if play button showing (means not playing)
+  */
 
   // list all access keys & track titles in console
   // for (key in colplayer.tracklists.collection) {console.log(`${key}: ${colplayer.tracklists.collection[key][0].trackTitle}`);}
@@ -47,32 +47,17 @@ console.log('Bandcamp Streamer! (v1.3.2)');
     const tab = pagedata.active_tab,
           wishTab = document.querySelector('#grid-tabs > li[data-tab=wishlist]'),
           collectionTab = document.querySelector('#grid-tabs > li[data-tab=collection]');
+    console.log('initial tab:', tab);
+
+    // save these to listen for switching playlists later
     if (wishTab) {
       wishTab.id = 'wishtab';
       window.wishTab = wishTab;
     }
     collectionTab.id = 'collectiontab';
-    console.log('initial tab:', tab);
-    // save these to listen for switching playlists later
-    
     window.collectionTab = collectionTab;
+
     if (tab !== 'wishlist' && tab !== 'collection') {
-      function tabClicked(e) {
-        e.stopPropagation();
-        let targetTab = false,
-            epath = e.path || e.composedPath();
-        console.log(e);
-        for (let i = 0; i < epath.length; i++) {
-          if (epath[i].id === 'wishtab') {
-            targetTab = 'wishlist';
-            break;
-          }
-        }
-        if (!targetTab) targetTab = 'collection';
-        collectionTab.removeEventListener('click', tabClicked);
-        if (wishTab) wishTab.removeEventListener('click', tabClicked);
-        loadCollection(targetTab);
-      };
       if (wishTab) wishTab.addEventListener('click', tabClicked);
       collectionTab.addEventListener('click', tabClicked);
     } else {
@@ -82,6 +67,23 @@ console.log('Bandcamp Streamer! (v1.3.2)');
     console.log('feed init');
     catchErrors(bcplayer._playlist._player._html5player, 'feed');
     bcplayer.feed_playlist = [];
+  }
+
+  function tabClicked(e) {
+    e.stopPropagation();
+    let targetTab = false,
+        epath = e.path || e.composedPath();
+    console.log(e);
+    for (let i = 0; i < epath.length; i++) {
+      if (epath[i].id === 'wishtab') {
+        targetTab = 'wishlist';
+        break;
+      }
+    }
+    if (!targetTab) targetTab = 'collection';
+    collectionTab.removeEventListener('click', tabClicked);
+    if (wishTab) wishTab.removeEventListener('click', tabClicked);
+    loadCollection(targetTab);
   }
 
   /**********************************************************

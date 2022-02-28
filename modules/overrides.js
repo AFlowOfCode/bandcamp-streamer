@@ -103,12 +103,13 @@ export function replaceFunctions(colplayer) {
         if (self.currentState() === 'paused' && self.pendingUpdate()) updateTracklists();
       }, 1000);
     }
-  }
+  };
 
   // these overrides needed to allow hooking into state changes
   function evt(event) {
-    return "player2." + (self.playerId ? self.playerId + "." : "") + event
+    return "player2." + (self.playerId ? self.playerId + "." : "") + event;
   }
+
   self.currentState.subscribe(function(v) {
     BCEvents.publish(evt("stateChange"), {
         state: v,
@@ -135,18 +136,25 @@ export function replaceFunctions(colplayer) {
           "search_key": searchKey,
           "search_type": type
       };
-      $.post("/api/fancollection/1/search_items", ko.toJSON(data$$0)).then(function(data) {
-          if (data.error)
-              return d.reject();
-          else
-            console.log(`found ${data.tralbums.length} search results`);
-            // prepare for new search result playlist
-            colplayer.searchResults = {};
-            colplayer.numSearchResults = data.tralbums.length;
-              return d.resolve(data.tralbums, data.gifts, data.tracklists, data.redownload_urls, data.similar_gift_ids, data.item_lookup, data.search_key)
-      }, function() {
-          return d.reject()
-      });
-      return d.promise()
-  }
+      $.post("/api/fancollection/1/search_items", ko.toJSON(data$$0)).then(
+        function(data) {
+          if (data.error) return d.reject();
+          console.log(`found ${data.tralbums.length} search results`);
+          // prepare for new search result playlist
+          colplayer.searchResults = {};
+          colplayer.numSearchResults = data.tralbums.length;
+          return d.resolve(
+            data.tralbums,
+            data.gifts,
+            data.tracklists,
+            data.redownload_urls,
+            data.similar_gift_ids,
+            data.item_lookup,
+            data.search_key
+          );
+        },
+        function() { return d.reject() }
+      );
+      return d.promise();
+  };
 } // replaceFunctions()

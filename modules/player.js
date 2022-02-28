@@ -6,28 +6,28 @@ export function addFunctions(colplayer) {
     colplayer.player2.stop();
     if (!colplayer.isShuffled) {
       console.log('shuffling');
+
       let a = colplayer.currentPlaylist === 'albums' ? colplayer.albumPlaylist.slice() : 
               colplayer.currentPlaylist === 'favorites' ? colplayer.collectionPlaylist.slice() :
               colplayer.wishPlaylist.slice(),
           shufQueue = [],
           el = document.getElementById('shuffler');
+
       for (let i = a.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [a[i], a[j]] = [a[j], a[i]];
       }
-      a.forEach(function(track,i){
-        shufQueue.push(`${track.trackData.artist} - ${track.trackData.title}`);
-      })
+      a.forEach((track) => shufQueue.push(`${track.trackData.artist} - ${track.trackData.title}`));
       colplayer.isShuffled = true;
       el.innerText = '➡ (unshuffle!)'; 
       colplayer.player2.setTracklist(a);
+
       let firstTrackEl;
       // allow clicking on item to play appropriate track from shuffle list 
       // todo: version of this for albums
       if (colplayer.currentPlaylist === 'favorites' || colplayer.currentPlaylist === 'wish') {
         a.forEach((track, i) => {
-          let id = track.itemId,
-              el = document.getElementById(track.domId);
+          let el = document.getElementById(track.domId);
           el.setAttribute('data-shufflenum', i);
           if (i === 0) {
             firstTrackEl = el;
@@ -37,14 +37,14 @@ export function addFunctions(colplayer) {
         });
       } else {
         let items = document.querySelectorAll('#collection-items .track_play_hilite');
-        items.forEach((item,i) => {
+        items.forEach((item) => {
           let shuffledAlbum = [];
           // find where all the album's tracks ended up
           a.forEach((track, i) => {
-            if (track.itemId === item.getAttribute('data-itemid')) {
-              shuffledAlbum.push(i);
-            }
+            if (track.itemId === item.getAttribute('data-itemid')) shuffledAlbum.push(i);
           });
+          // this is which album track plays when clicking on the art
+          // can only be one unless there was a sub-shuffle routine that randomized it every time
           let shufTrack = shuffledAlbum.length === 1 ? shuffledAlbum[0] : 
                           shuffledAlbum[Math.floor(Math.random() * shuffledAlbum.length)];
           item.setAttribute('data-shufflenum', shufTrack);
@@ -94,23 +94,25 @@ export function addFunctions(colplayer) {
       */
       if (colplayer.pendingUpdate || colplayer.pendingUpdateTemp) {
         colplayer.pendingUpdateTemp = colplayer.pendingUpdate;
-        colplayer.pendingUpdate = !colplayer.pendingUpdate;
+        colplayer.pendingUpdate = !colplayer.pendingUpdateTemp;
       }
       if (colplayer.pendingWishUpdate || colplayer.pendingWishUpdateTemp) {
         colplayer.pendingWishUpdateTemp = colplayer.pendingWishUpdate;
-        colplayer.pendingWishUpdate = !!!colplayer.pendingWishUpdateTemp;
+        colplayer.pendingWishUpdate = !colplayer.pendingWishUpdateTemp;
       }
     }
     return !!(colplayer.pendingUpdate || colplayer.pendingWishUpdate);
-  }
+  };
 
 } // addFunctions()
 
-// this catches errors that halt all playback and instead restarts the stream
-// usually when this happens it's because the mp3 url has expired or changed.. example:
-// GET https://bandcamp.com/stream_redirect?enc=mp3-128&track_id=2441814329&ts=1569574019&t=44bc84483037a3141cfe964490d1d29851e570ff 
-// net::ERR_NAME_NOT_RESOLVED
-// HTML5Player-1: got native error event; error.code=4
+/*
+  this catches errors that halt all playback and instead restarts the stream
+  usually when this happens it's because the mp3 url has expired or changed.. example:
+  GET https://bandcamp.com/stream_redirect?enc=mp3-128&track_id=2441814329&ts=1569574019&t=44bc84483037a3141cfe964490d1d29851e570ff
+  net::ERR_NAME_NOT_RESOLVED
+  HTML5Player-1: got native error event; error.code=4
+*/
 export function catchErrors(player, page) {
   // this needs to be the _html5player
   // collection page: colplayer.player2._playlist._player._html5player
@@ -124,7 +126,7 @@ export function catchErrors(player, page) {
       feedPlayer.next();
       feedPlayer.previous();
     }      
-  }
+  };
 }
 
 /**

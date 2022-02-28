@@ -107,7 +107,7 @@ export function loadCollection(tab) {
         BCEvents.handlers["player2.tralbumUrlClick"][0] = (item) => {
           const itemContainer = colplayer.currentItemEl();
           Dom.scrollToElement(itemContainer.filter(":visible"), -160);
-        }
+        };
       }, 1000); // setTimeout
     }
   });
@@ -323,8 +323,8 @@ function add_to_playlist({
   // build album playlist 
   if (can_push && is_owner && (list_name === 'collection' || list_name === 'collection-search')) {
     let album = tracklist[item_key];
-    album_playlist = list_name === 'collection-search' ? playlist : album_playlist
-    album_title_list = list_name === 'collection-search' ? title_list : album_title_list
+    album_playlist = list_name === 'collection-search' ? playlist : album_playlist;
+    album_title_list = list_name === 'collection-search' ? title_list : album_title_list;
     dom_list[index].setAttribute('data-firsttrack', album_playlist.length);
     if (album.length >= 1) {
       album.forEach((t) => {
@@ -372,7 +372,7 @@ function switch_playlists({init=false, switch_to} = {}) {
   if (switch_from?.indexOf('search') > -1) {
     // console.log('replacing trablumurlclick handler & shuffler');
     BCEvents.handlers["player2.tralbumUrlClick"][0] = window.orig_trablumUrlClick_handler;
-    const shuffler = document.getElementById('shuffler');
+    let shuffler = document.getElementById('shuffler');
     if (!shuffler) shuffler = create_shuffler({place_in_dom: true});
     shuffler.classList.remove('hidden');
   }
@@ -575,8 +575,6 @@ function playerHandler(ev) {
                  // only wish search uses data-searchnum attr 
                  colplayer.currentPlaylist === 'wishlist-search' && is_wish_search ? item.getAttribute('data-searchnum') :
                  item.getAttribute('data-firsttrack'),          
-      tralbumId = item.getAttribute("data-tralbumid"),
-      tralbumType = item.getAttribute("data-tralbumtype"),
       itemKey = getItemKey(item);
 
   console.log('got tracknum', tracknum);

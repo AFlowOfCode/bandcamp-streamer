@@ -1,6 +1,5 @@
 import { 
-  bind_play_buttons, set_track_numbers, validate_feed_integrity, checkDuplicates, setPrice,
-  rebuild_feed_playlist
+  bind_play_buttons, set_track_numbers, validate_feed_integrity, setPrice, rebuild_feed_playlist
 } from './feed.js';
 import { buildPlaylists, buildWishPlaylist, init_true_view_all } from './profile.js';
 
@@ -127,9 +126,9 @@ export function observeTotal(page, parent) {
       
     }
     // console.log(`there are now ${numTracks} playable tracks in feed (minus any dead tracks)`, bcplayer._playlist._playlist);    
-  });
+  }); // observer definition
   observer.observe(parent, options);
-}
+} // observeTotal
 
 function handle_feed_page_expansion() {
   if (currentList === 'feed') {

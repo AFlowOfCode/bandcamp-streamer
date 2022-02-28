@@ -104,7 +104,9 @@ export function FeedPlaylist(bcplayer, originalPlaylist) {
   
   if (this.$trackPlayWaypoint) {
     this.$el = this.injectHtml();
+    // how far into the track time-wise, eg 00:27/4:10
     this.$position = this.$el.querySelector('#track_play_waypoints_controls_position');
+    // the total length of current track
     this.$duration = this.$el.querySelector('#track_play_waypoints_controls_duration');
     this.$volume = this.$el.querySelector('#volume-value');
     this.observe();
@@ -114,7 +116,7 @@ export function FeedPlaylist(bcplayer, originalPlaylist) {
 
 export function initFeedPlaylist(FeedPlaylist) {
   // Observe changes
-  FeedPlaylist.prototype.observe = function(e) {
+  FeedPlaylist.prototype.observe = function() {
     const self = this;
     const observers = [
       { obj: this.playlist, prop: '_track' },
@@ -130,14 +132,11 @@ export function initFeedPlaylist(FeedPlaylist) {
         set: function(newValue) {
           if (newValue === self[observer.prop]) return; 
           self[observer.prop] = newValue;
-          if (typeof observer.callback == 'function') {
-              return observer.callback(newValue);
-          }
-          return newValue;
+          if (typeof observer.callback == 'function') observer.callback(newValue);
         }
       });
     });
-  }
+  };
 
   // Methods
   FeedPlaylist.prototype.playpause = function(e) {
@@ -145,21 +144,21 @@ export function initFeedPlaylist(FeedPlaylist) {
         e.preventDefault();
     }
     return this.playlist.playpause();
-  }
+  };
 
   FeedPlaylist.prototype.next = function(e) {
     if (e) {
         e.preventDefault();
     }
-    return this.playlist.next_track()
-  }
+    return this.playlist.next_track();
+  };
 
   FeedPlaylist.prototype.previous = function(e) {
     if (e) {
         e.preventDefault();
     }
     return this.playlist.prev_track();
-  }
+  };
 
   FeedPlaylist.prototype.vol_down = function(e) {
     if (e) e.preventDefault();
@@ -168,7 +167,7 @@ export function initFeedPlaylist(FeedPlaylist) {
     } else {
       return this.playlist._player.setvol(this._volume - 0.1);
     }
-  }
+  };
 
   FeedPlaylist.prototype.vol_up = function(e) {
     if (e) e.preventDefault();
@@ -177,7 +176,7 @@ export function initFeedPlaylist(FeedPlaylist) {
     } else {
       return this.playlist._player.setvol(this._volume + 0.1);
     }
-  }
+  };
 
   FeedPlaylist.prototype.onStateUpdate = function(state) {
     console.log("onStateUpdate:", state, "track:", this._track);
@@ -231,7 +230,7 @@ export function initFeedPlaylist(FeedPlaylist) {
             trackArtist = document.querySelector('#track_play_waypoint .waypoint-artist-title').textContent;
       window.document.title = `${trackTitle} ${trackArtist} | ${window.originalTitle}`;
     }, 100);
-  }
+  };
 
   // DOM
   FeedPlaylist.prototype.updatePosition = function() {
@@ -297,7 +296,7 @@ export function initFeedPlaylist(FeedPlaylist) {
         element = document.createElement('a');
         element.href = "#";
         element.innerText = control.text;
-        element.addEventListener('click', control.action)
+        element.addEventListener('click', control.action);
       }        
       if (control.vol) {
         volContainer.appendChild(element);
@@ -310,7 +309,7 @@ export function initFeedPlaylist(FeedPlaylist) {
     container.appendChild(volContainer);
 
     return this.$trackPlayWaypoint.parentElement.appendChild(container);
-  } // ...injectHtml()
+  }; // ...injectHtml()
 }
 
 /**
