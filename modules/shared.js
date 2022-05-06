@@ -13,14 +13,11 @@ export function bindControlKeys({bcplayer, colplayer, albumplayer} = {}) {
   document.addEventListener('keydown', (e) => {
     if (e.code === 'Space' && e.target == document.body) {
       e.preventDefault();
-      console.log('no scrolling');
+      // console.log('no scrolling');
     }
   });
   document.addEventListener('keyup', (e) => {
-    let controlKey = false;
-    if (e.code === 'Space' || e.code === 'ArrowLeft' || e.code === 'ArrowRight') {
-      controlKey = true;
-    }
+    const controlKey = e.code === 'Space' || e.code === 'ArrowLeft' || e.code === 'ArrowRight';
     if (controlKey && e.target == document.body) {
       if (bcplayer !== undefined) {
         // console.log('feed', bcplayer)
@@ -50,17 +47,16 @@ export function bindControlKeys({bcplayer, colplayer, albumplayer} = {}) {
             break;
         }
       } else if (albumplayer !== undefined) {
-        // console.log('album/track',albumplayer); 
+        // console.log(e.code, 'album/track', albumplayer);
         switch(e.code) {
           case 'Space':
-            albumplayer.playpause();
+            document.querySelector('.playbutton').click();
             break;
-          // Album player has different mechanism of switching tracks
           case 'ArrowLeft':
-            // albumplayer.prev();
+            document.querySelector('.prevbutton').click();
             break;
           case 'ArrowRight':
-            // albumplayer.next();
+            document.querySelector('.nextbutton').click();
             break;
         }
       }
