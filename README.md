@@ -50,11 +50,16 @@ Firefox: [https://addons.mozilla.org/en-US/firefox/addon/bandcamp-streamer/](htt
   * Any donation no matter how small is appreciated. Much like making music, writing browser extensions is often a labor of love with little to no financial benefits in return for a lot of heart and effort.
 
   * https://www.paypal.me/aflowofcode
-  * BTC: 1BAUU2oop9hQdoLujcZPmkBKWiT6JVEyfM
+  * BTC: 1Juw5ZBdWujAYErTqGd6DwU48xL7HnnF6T
   * ETH: 0x54e0beAAF0fA4858e9671aCcDEb4d5C4d4f41f95
-  * BCH: bitcoincash:qz26zw42996nf7xh7u2j3z6usv29vgk7wyp09ryk3t
+  * BCH: bitcoincash:qpaw45z4w4pudgdtevh5ysrwyf0xkmrq4cv69zjhc9
 
 ### Changelog
+
+##### 1.4.0
+  * Bind L/R arrow keys to previous/next track on regular album pages
+  * Fix incorrect shuffler text after switching from shuffled playlist
+  * Fix inherently unplayable DOM item breaking collection playlist
 
 ##### 1.3.3
   * Fix pause then unpause on feed starting playlist over
