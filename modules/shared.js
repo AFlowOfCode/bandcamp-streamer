@@ -86,8 +86,8 @@ export function observeTotal(page, parent) {
       if (colplayer.isShuffled) colplayer.pendingUnshuffle = true;
 
       let items = page === 'collection' ? 
-                  document.querySelectorAll('#collection-items .track_play_hilite') :
-                  document.querySelectorAll('#wishlist-items .track_play_hilite');
+                  document.querySelectorAll('#collection-items .collection-item-container') :
+                  document.querySelectorAll('#wishlist-items .collection-item-container');
       console.log('tracks in tab:', items.length, 'tracks ready:', numTracks);
       if (items.length < numTracks) {
         // this means mutation observer triggered build before all the items showed up

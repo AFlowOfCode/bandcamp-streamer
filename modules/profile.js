@@ -63,7 +63,7 @@ export function loadCollection(tab) {
 
       // need to wait for items to show up
       setTimeout(() => {
-        const dom_list = document.querySelectorAll('#search-items-container .track_play_hilite'),
+        const dom_list = document.querySelectorAll('#search-items-container .collection-item-container'),
               playlist_name = `${result.gridType}-search`,
               is_same_tab_search = colplayer.currentPlaylist === playlist_name;
 
@@ -119,7 +119,7 @@ export function buildPlaylists(index, isOwner) {
   console.log('building playlists, index:',index, 'is owner:', isOwner);
   // index is 0 on first run, > 0 when collection view expanded
   if (index === 0) colplayer.col_missing = 0;
-  let items = document.querySelectorAll('#collection-items .track_play_hilite'),
+  let items = document.querySelectorAll('#collection-items .collection-item-container'),
       collectionPlaylist = index === 0 ? [] : colplayer.collectionPlaylist.slice(),
       albumPlaylist =      index === 0 || !isOwner ? [] : colplayer.albumPlaylist.slice(),
       queueTitles =        index === 0 ? [] : colplayer.queueTitles.slice(),
@@ -210,7 +210,7 @@ export function buildPlaylists(index, isOwner) {
 export function buildWishPlaylist(index) {
   console.log('building wish playlist, starting index:', index);
   if (index === 0) colplayer.wish_missing = 0;
-  let wishItems = document.querySelectorAll('#wishlist-items .track_play_hilite'),
+  let wishItems = document.querySelectorAll('#wishlist-items .collection-item-container'),
       wishPlaylist =       index === 0 ? [] : colplayer.wishPlaylist.slice(),
       wishQueueTitles =    index === 0 ? [] : colplayer.wishQueueTitles.slice(),
       fave_switcher = document.getElementById('playlist-switcher');
