@@ -68,6 +68,7 @@ export function addFunctions(colplayer) {
       setCurrentEl(document.getElementById(unshuffled[0].domId));
       colplayer.isShuffled = false;
       if (!shuffler) create_shuffler({place_in_dom: true});
+      if (shuffler) shuffler.innerText = '🔀 (shuffle!)';
     }
   }; // colplayer.shuffle()
 
