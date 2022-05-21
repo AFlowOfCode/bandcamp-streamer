@@ -60,6 +60,7 @@ Firefox: [https://addons.mozilla.org/en-US/firefox/addon/bandcamp-streamer/](htt
   * Bind L/R arrow keys to previous/next track on regular album pages
   * Fix incorrect shuffler text after switching from shuffled playlist
   * Fix inherently unplayable DOM item breaking collection playlist
+  * Fix break if only one track in search result playlist
 
 ##### 1.3.3
   * Fix pause then unpause on feed starting playlist over

@@ -40,11 +40,13 @@ export function loadCollection(tab) {
       to collectionPlayer.tracklists.<result.gridType>
       album art appears in #[collection|wishlist]-search-items .collection-grid
     */
+
     // console.log('search result', result);
-    const result_key = Object.keys(result.newTracklists)[0];
+    const result_key = Object.keys(result.newTracklists)[0],
+          // .mine class only present on owner's profile
+          is_owner = document.getElementById('fan-container')?.classList?.contains('mine');
     colplayer.searchResults[result_key] = collectionPlayer.tracklists[result.gridType][result_key];
 
-    let is_owner = false;
     // searchResults reset for each search, along with numSearchResults 
     // in overrides.js FanCollectionAPI.searchItems  
     if (Object.keys(colplayer.searchResults).length === colplayer.numSearchResults) {
@@ -53,13 +55,6 @@ export function loadCollection(tab) {
 
       // hide search results until click handlers are set
       document.querySelector('html').classList.add('search-results-hidden');
-
-      // have to loop through the tracklists & see if any results are albums 
-      // loop is needed since it's possible many owner collection results may be single tracks      
-      // but a tracklist w/ more than one track indicates it's an owner collection search
-      Object.keys(colplayer.searchResults).forEach((list) => {
-        if (colplayer.searchResults[list].length > 1) is_owner = true;
-      }); 
 
       // need to wait for items to show up
       setTimeout(() => {
@@ -296,6 +291,7 @@ function add_to_playlist({
                  dom_list[index].getAttribute('data-trackid') &&
                  (is_owner || !is_subscriber_only);
   // console.log('list', list_name, 'can push', can_push);
+
   if (!can_push) {
     console.log("missing track", item_key, track?.trackData?.title);
     if (list_name === 'wish') {
@@ -326,6 +322,7 @@ function add_to_playlist({
     album_playlist = list_name === 'collection-search' ? playlist : album_playlist;
     album_title_list = list_name === 'collection-search' ? title_list : album_title_list;
     dom_list[index].setAttribute('data-firsttrack', album_playlist.length);
+
     if (album.length >= 1) {
       album.forEach((t) => {
         push_track({
@@ -354,6 +351,7 @@ function push_track({track, item_id, dom_id, playlist, title_list, list_name} = 
 export function create_shuffler({place_in_dom=false} = {}) {
   const queueHeader = document.querySelector('.queue-header h2'),
         shuffler = document.createElement('span');
+  if (!queueHeader) return;
   // console.log('creating shuffler, might attach to', queueHeader);
   shuffler.id = 'shuffler';
   if (place_in_dom) {
@@ -372,13 +370,12 @@ function switch_playlists({init=false, switch_to} = {}) {
   if (switch_from?.indexOf('search') > -1) {
     // console.log('replacing trablumurlclick handler & shuffler');
     BCEvents.handlers["player2.tralbumUrlClick"][0] = window.orig_trablumUrlClick_handler;
-    let shuffler = document.getElementById('shuffler');
-    if (!shuffler) shuffler = create_shuffler({place_in_dom: true});
-    shuffler.classList.remove('hidden');
   }
+
   // unshuffle
   if (colplayer.isShuffled) colplayer.shuffle(); 
   let queueHeader = document.querySelector('.queue-header h2');
+
   if (init) {
     let switcher = document.createElement('a'),
         status = document.createElement('p'),
@@ -423,6 +420,7 @@ function switch_playlists({init=false, switch_to} = {}) {
   } else {
     let switcher = document.getElementById('playlist-switcher'),
         header = document.getElementById('playlist-header'),
+        // this may be null at first if switching from playlist with only one track
         shuffler = document.getElementById('shuffler');
     if (switch_to === 'wish') {
       colplayer.player2.setTracklist(colplayer.wishPlaylist);
@@ -456,10 +454,7 @@ function switch_playlists({init=false, switch_to} = {}) {
         colplayer.currentItemKey('');
         colplayer.currentPlaylist = 'favorites';
         if (header) header.innerText = 'favorite tracks';
-        if (colplayer.isOwner) {
-          shuffler.classList.remove('hidden');
-          switcher.innerText = 'Switch to full albums';  
-        }
+        if (colplayer.isOwner) switcher.innerText = 'Switch to full albums';
       } else {
         console.log('current playlist:', colplayer.currentPlaylist);
         colplayer.player2.setTracklist(colplayer.albumPlaylist);
@@ -468,6 +463,15 @@ function switch_playlists({init=false, switch_to} = {}) {
         colplayer.currentPlaylist = 'albums';
         if (header) header.innerText = 'albums';
         switcher.innerText = 'Switch to favorite tracks';
+      }
+      /*
+        create / unhide shuffler after switching into faves or album
+        this needs to be done after everything loaded into the queue
+        or there won't be a queue header
+      */
+      if (colplayer.isOwner) {
+        if (!shuffler) shuffler = create_shuffler({place_in_dom: true});
+        shuffler.classList.remove('hidden');
       }
     }      
   }
