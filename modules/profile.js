@@ -163,19 +163,19 @@ export function buildPlaylists(index, isOwner) {
       // don't change the queue
       console.log('not changing queue yet');
     } else {
-      if (colplayer.currentPlaylist === 'albums') {
-        setQueueTitles(albumQueueTitles);
-      } else {
-        setQueueTitles(queueTitles);
-      }
+      setQueueTitles(colplayer.currentPlaylist === 'albums' ? albumQueueTitles : queueTitles);
+      colplayer.currentItemKey('');
     }
     // not owner
   } else {
     if (colplayer.player2.showPlay()) {
       console.log("not playing:", colplayer.player2.showPlay());
+      // this resets playlist - a paused track's position is lost 
+      // and first track of playlist is queued
       colplayer.player2.setTracklist(collectionPlaylist);      
       colplayer.currentPlaylist = 'favorites';
-      setQueueTitles(queueTitles);        
+      setQueueTitles(queueTitles);
+      colplayer.currentItemKey('');
     } else {
       colplayer.pendingUpdate = true;
     }      
@@ -425,6 +425,7 @@ function switch_playlists({init=false, switch_to} = {}) {
     if (switch_to === 'wish') {
       colplayer.player2.setTracklist(colplayer.wishPlaylist);
       setQueueTitles(colplayer.wishQueueTitles);
+      colplayer.currentItemKey('');
       colplayer.currentPlaylist = 'wish';
       if (header) header.innerText = 'wishlist';
       if (colplayer.isOwner) {

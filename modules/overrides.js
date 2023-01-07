@@ -49,6 +49,7 @@ export function replaceFunctions(colplayer) {
     self._playlist.load([newTrack.trackData]);
     self.duration(self._playlist.duration());
     setCurrentEl(el);
+    // currentItemKey() is a built-in which returns the DOM item's data-tralbumtype + data-itemid
     colplayer.currentItemKey(itemKey);
 
     // set play button on previous item
