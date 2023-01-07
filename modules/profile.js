@@ -109,11 +109,37 @@ export function loadCollection(tab) {
 
 } // loadCollection()
 
+/**
+ * Sets player tracklist & queue titles, retaining track position if paused.
+ * @param {array} tracklist - array of TrackInfo objects
+ * @param {string} name - the name of the playlist (if changing), eg "favorites"
+ * @param {array} titles - artist/track strings for queue display, eg ["Artist - Track"]
+ */ 
+function set_tracklist_and_titles({tracklist, name, titles} = {}) {
+  const is_paused = colplayer.player2.currentState() === 'paused',
+        {num, position} = get_track_position();
+  // console.log('is paused?', is_paused, num, position);
+
+  colplayer.player2.setTracklist(tracklist);      
+  if (name) colplayer.currentPlaylist = name;
+  // console.log('setting queue titles:', titles);
+  setQueueTitles(titles);
+  /*
+    since playlist stops on switch, need to clear the item key
+    otherwise clicking on the same item in the new playlist
+    will instead play the first track
+  */
+  colplayer.currentItemKey('');
+  // put transport back to where it was
+  if (is_paused) restore_position(num, position);
+}
+
 // TODO: combine build playlist functions - need serious refactoring
 export function buildPlaylists(index, isOwner) {
   console.log('building playlists, index:',index, 'is owner:', isOwner);
   // index is 0 on first run, > 0 when collection view expanded
   if (index === 0) colplayer.col_missing = 0;
+  const is_playing = !colplayer.player2.showPlay();
   let items = document.querySelectorAll('#collection-items .collection-item-container'),
       collectionPlaylist = index === 0 ? [] : colplayer.collectionPlaylist.slice(),
       albumPlaylist =      index === 0 || !isOwner ? [] : colplayer.albumPlaylist.slice(),
@@ -140,9 +166,10 @@ export function buildPlaylists(index, isOwner) {
   } // end collection/album tracklist builder loop 
 
   if (isOwner) {
-    // don't immediately update & stop current song if this is an update
-    if (colplayer.player2.showPlay()) {
-      console.log("not playing:", colplayer.player2.showPlay(), colplayer.currentPlaylist);
+    // only immediately update if not playing to avoid stopping current song 
+    // if this is an update vs first build
+    if (!is_playing) {
+      console.log("not playing:", colplayer.currentPlaylist);
       // only set to album playlist if first time or still on albums
       if ((index === 0 && colplayer.currentPlaylist === undefined) || colplayer.currentPlaylist === 'albums') {
         colplayer.player2.setTracklist(albumPlaylist);
@@ -159,7 +186,7 @@ export function buildPlaylists(index, isOwner) {
     colplayer.albumPlaylist = albumPlaylist;
     colplayer.albumQueueTitles = albumQueueTitles;
     // if (colplayer.currentPlaylist === 'wish' && !colplayer.player2.showPlay()) {
-    if (!colplayer.player2.showPlay()) {
+    if (is_playing) {
       // don't change the queue
       console.log('not changing queue yet');
     } else {
@@ -168,14 +195,13 @@ export function buildPlaylists(index, isOwner) {
     }
     // not owner
   } else {
-    if (colplayer.player2.showPlay()) {
-      console.log("not playing:", colplayer.player2.showPlay());
-      // this resets playlist - a paused track's position is lost 
-      // and first track of playlist is queued
-      colplayer.player2.setTracklist(collectionPlaylist);      
-      colplayer.currentPlaylist = 'favorites';
-      setQueueTitles(queueTitles);
-      colplayer.currentItemKey('');
+    if (!is_playing) {
+      console.log("not playing & not owner");
+      set_tracklist_and_titles({
+        tracklist: collectionPlaylist, 
+        name: 'favorites', 
+        titles: queueTitles
+      });
     } else {
       colplayer.pendingUpdate = true;
     }      
@@ -186,7 +212,7 @@ export function buildPlaylists(index, isOwner) {
   colplayer.collectionLength = items.length;
 
   // allow switching between full albums & favorite tracks
-  if (index === 0 && colplayer.player2.showPlay()) {
+  if (index === 0 && !is_playing) {
     // initialize playlist - defaults to albums for owner, otherwise favorites
     switch_playlists({init: true}); 
     // always switch playlists if nothing played yet & tab clicked
@@ -423,10 +449,11 @@ function switch_playlists({init=false, switch_to} = {}) {
         // this may be null at first if switching from playlist with only one track
         shuffler = document.getElementById('shuffler');
     if (switch_to === 'wish') {
-      colplayer.player2.setTracklist(colplayer.wishPlaylist);
-      setQueueTitles(colplayer.wishQueueTitles);
-      colplayer.currentItemKey('');
-      colplayer.currentPlaylist = 'wish';
+      set_tracklist_and_titles({
+        tracklist: colplayer.wishPlaylist, 
+        name: 'wish', 
+        titles: colplayer.wishQueueTitles
+      });
       if (header) header.innerText = 'wishlist';
       if (colplayer.isOwner) {
         switcher.innerText = '';
@@ -448,20 +475,20 @@ function switch_playlists({init=false, switch_to} = {}) {
       // default to favorites when switching from wish or search
       const other_playlists = ['albums', 'wish', 'search'];
       if (other_playlists.indexOf(colplayer.currentPlaylist) > -1 || !colplayer.isOwner) {
-        colplayer.player2.setTracklist(colplayer.collectionPlaylist);
-        setQueueTitles(colplayer.queueTitles);
-        // since playlist stops on switch, need to clear item key
-        // otherwise if clicking on same item but new playlist it won't work
-        colplayer.currentItemKey('');
-        colplayer.currentPlaylist = 'favorites';
+        set_tracklist_and_titles({
+          tracklist: colplayer.collectionPlaylist, 
+          name: 'favorites', 
+          titles: colplayer.queueTitles
+        });
         if (header) header.innerText = 'favorite tracks';
         if (colplayer.isOwner) switcher.innerText = 'Switch to full albums';
       } else {
         console.log('current playlist:', colplayer.currentPlaylist);
-        colplayer.player2.setTracklist(colplayer.albumPlaylist);
-        setQueueTitles(colplayer.albumQueueTitles);
-        colplayer.currentItemKey('');
-        colplayer.currentPlaylist = 'albums';
+        set_tracklist_and_titles({
+          tracklist: colplayer.albumPlaylist, 
+          name: 'albums', 
+          titles: colplayer.albumQueueTitles
+        });
         if (header) header.innerText = 'albums';
         switcher.innerText = 'Switch to favorite tracks';
       }
@@ -491,42 +518,55 @@ export function setQueueTitles(titles){
   }
 }
 
+function get_track_position() {
+  const position = colplayer.player2.position(),
+        num      = +colplayer.player2.currentTrackIndex();
+  console.log(`track ${num} position:`, position);
+  return {position, num};
+}
+
+function restore_position(num, position) {
+  colplayer.player2.setCurrentTrack(num);
+  colplayer.player2._playlist.seek(position);
+  colplayer.player2._playlist._player.pause();
+}
+
 // updates the current playlist with any new items added to the page while scrolling
 export function updateTracklists(num) {
-  let status = document.querySelector('#playlist-status'),
-      position = false;
+  const status    = document.querySelector('#playlist-status'),
+        is_faves  = colplayer.currentPlaylist === 'favorites',
+        cur_track = get_track_position();
+  let   position  = false;
+      
   // no status on non-owner collections
   if (status) status.innerText = '';
 
+  // if num not passed in, not changing tracks
   if (!num && colplayer.player2.currentState() === 'paused') {
     console.log('maintaining position while paused during update');
-    position = colplayer.player2.position();
-    num = +colplayer.player2.currentTrackIndex();
+    position = cur_track.position;
+    num = cur_track.num;
   }
   console.log('updating tracklist while nothing is playing, will resume at', num);
 
   if (colplayer.pendingUpdate) {
-    if (colplayer.currentPlaylist === 'favorites') {
-      console.log('updating favorites');
-      colplayer.player2.setTracklist(colplayer.collectionPlaylist);
-      setQueueTitles(colplayer.queueTitles);
-    } else if (colplayer.currentPlaylist === 'albums') {
-      console.log('updating albums');
-      colplayer.player2.setTracklist(colplayer.albumPlaylist);
-      setQueueTitles(colplayer.albumQueueTitles);
-    }
+    set_tracklist_and_titles({
+      tracklist: is_faves ? colplayer.collectionPlaylist : colplayer.albumPlaylist, 
+      titles: is_faves ? colplayer.queueTitles : colplayer.albumQueueTitles
+    });
     colplayer.pendingUpdate = false;
   } else if (colplayer.pendingWishUpdate) {
-    console.log('wishlist updated');
-    colplayer.player2.setTracklist(colplayer.wishPlaylist);
-    setQueueTitles(colplayer.wishQueueTitles);
+    set_tracklist_and_titles({
+      tracklist: colplayer.wishPlaylist, 
+      titles: colplayer.wishQueueTitles
+    });
     colplayer.pendingWishUpdate = false;
   }    
 
+  console.log(`updated ${colplayer.currentPlaylist}`);
+
   if (position) {
-    colplayer.player2.setCurrentTrack(num);
-    colplayer.player2._playlist.seek(position);
-    colplayer.player2._playlist._player.pause();
+    restore_position(num, position);
   } else if (num) colplayer.player2.goToTrack(num);
 }
 
