@@ -56,6 +56,11 @@ Firefox: [https://addons.mozilla.org/en-US/firefox/addon/bandcamp-streamer/](htt
 
 ### Changelog
 
+##### 1.4.1
+  * Fix artist-marked private items breaking playlist
+  * Retain track & position when paused during playlist expansion
+  * Fix bad play handler on collection item if paused during playlist expansion
+
 ##### 1.4.0
   * Bind L/R arrow keys to previous/next track on regular album pages
   * Fix incorrect shuffler text after switching from shuffled playlist
