@@ -146,7 +146,7 @@ export function buildPlaylists(index, isOwner) {
       queueTitles =        index === 0 ? [] : colplayer.queueTitles.slice(),
       albumQueueTitles =   index === 0 || !isOwner ? [] : colplayer.albumQueueTitles.slice();
 
-  // build collection & album playlists
+  // build collection (favorites) & album playlists
   for (let i = index; i < items.length; i++) {   
     add_to_playlist({
       dom_list: items,
@@ -286,6 +286,41 @@ export function buildWishPlaylist(index) {
   return wishItems[0];
 }
 
+/**
+ * Finds the user's favorite track in an item's set of tracks
+ * @param {DOMNode} fave_node - node specifying favorite track (.fav-track-link)
+ * @param {array} tracklist - the item's set of TrackInfo objects
+ * @returns {TrackInfo|undefined}
+ */
+function get_fave_track(fave_node, tracklist) {
+  let fave_track = undefined;
+  if (fave_node.href) {
+    fave_track = tracklist[+fave_node.href.slice(fave_node.href.indexOf('?t=') + 3) - 1];
+  } else {
+    /* 
+      if item has been marked private ("The artist has removed this release from public view")
+      then link to track has been removed and no track number is available, so it must be
+      manually found via title matching in the item's tracklist
+    */
+    const fave_title = fave_node.innerText;
+    console.log(`searching for fave ${fave_title} in list`, tracklist);
+    for (let i = 0; i < tracklist.length; i++) {
+      console.log('item tracks:', i, tracklist[i].trackTitle);
+      if (tracklist[i].trackTitle == fave_title) {
+        fave_track = tracklist[i];
+        break;
+      }
+    }
+  }
+  if (fave_track) {
+    console.log('found fave track', fave_track.artist, fave_track.trackTitle, fave_track);
+  } else {
+    console.log("fave track specified but couldn't find it");
+  }
+  return fave_track;
+}
+
+
 // add track to playlist & queue titles list
 function add_to_playlist({
   dom_list, tracklist, playlist, album_playlist=[], 
@@ -305,8 +340,8 @@ function add_to_playlist({
 
   // if a favorite track is set use that instead of first track in the set
   if (is_owner && fave_node && list_name.indexOf('search') === -1 && tracklist[item_key]) {
-    console.log('found fave track');
-    track = tracklist[item_key][+fave_node.href.slice(fave_node.href.indexOf('?t=') + 3) - 1];
+    const fave_track = get_fave_track(fave_node, tracklist[item_key]);
+    if (fave_track) track = fave_track;
   }
 
   // trackData.title is null when an item has no streamable track
