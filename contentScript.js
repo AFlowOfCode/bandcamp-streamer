@@ -9,15 +9,23 @@ import { loadCollection } from './modules/profile.js';
   * by A Flow of Code      *
   * github.com/aflowofcode *
   **************************/
-console.log('Bandcamp Streamer! (v1.4.2)');
-
 (function(window, document) {
+
+  // Don't bother initializing on pages where BCS is not applicable
+  // 404 "that something isn't here"
+  if (window.gplayerviews == undefined) return;
 
   const bcplayer = window.playerview,
         colplayer = window.collectionPlayer,
         albumplayer = window.gplayerviews[0] ? window.gplayerviews[0]._playlist._player : false,
         jQuery = window.jQuery,
         pagedata = jQuery("#pagedata").data("blob");
+
+  // band album index (.../music) -> gplayerviews == [] and other players are undefined
+  if (!bcplayer && !colplayer && !albumplayer) return;
+
+  console.log('Bandcamp Streamer! (v1.4.2)');
+
 
   // using more globals due to split into modules
   // TODO: these should be namespaced
