@@ -56,6 +56,10 @@ Firefox: [https://addons.mozilla.org/en-US/firefox/addon/bandcamp-streamer/](htt
 
 ### Changelog
 
+##### 1.4.2
+  * Fix "view all" loading dupe tracks at end of large collections
+  * Add count of pending tracks to load during "view all" 
+
 ##### 1.4.1
   * Fix artist-marked private items breaking playlist
   * Retain track & position when paused during playlist expansion

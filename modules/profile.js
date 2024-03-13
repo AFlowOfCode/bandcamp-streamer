@@ -11,7 +11,7 @@ export function loadCollection(tab) {
   colplayer.wishBuilt = false;
 
   console.log(`clicked on ${tab} first`);
-  let initEl = tab === 'collection' ? buildPlaylists(0,colplayer.isOwner) : 
+  let initEl = tab === 'collection' ? buildPlaylists(0, colplayer.isOwner) : 
                tab === 'wishlist'   ? buildWishPlaylist(0) : false;
   setCurrentEl(initEl);
 
@@ -719,18 +719,55 @@ export function init_true_view_all(tab_name) {
 
 function load_more_items(tab_name) {
   const html = document.querySelector('html'),
-        status = document.querySelector('#playlist-status');
-  let   still_more = CollectionGrids[tab_name].sequence.length < CollectionGrids[tab_name].itemCount;
-  // batchSize is how many it loads at once - too many & browser has trouble, too little & it takes too long
-  // default is 20
-  CollectionGrids[tab_name].batchSize = 250;
-  if (still_more) {
-    html.classList.add('loading');
-    if (status) status.innerText = 'Loading... be patient if there are a lot of items!';
+        status = document.querySelector('#playlist-status'),
+        col_total = CollectionGrids[tab_name].itemCount,
+        unloaded = col_total - CollectionGrids[tab_name].sequence.length;
+  let   still_more = CollectionGrids[tab_name].sequence.length < col_total;
 
+  /* 
+  batchSize is how many tracks are loaded at once during pagination (aka when items are added to the page).
+  Too many & the browser has trouble, too little & it takes too long (default is 20).
+  
+  However, setting the batch size only works the first time paginate is called. On successive requests, 
+  batchSize is ignored & {count: 40} is included in the actual API request.
+  This fits with the example below where after 270, it ends up at 310 with dupes.
+  1st run: custom batch size
+  > 1 run: 40, which causes dupes or failure to load all tracks
+
+  For unknown reasons, if the user's unloaded collection tracks aren't divisible by 40 after setting
+  a custom batch size, the last run won't load the remaining tracks, but instead load duplicates of previous tracks.
+  Note that wishlist pagination doesn't have this exact issue, but it has its own idiosyncratic behavior, 
+  indicating the server code differs between the two pagination endpoints.  
+
+  If batch size is dynamically changed when rerunning this function, the process just gets stuck.
+  */
+
+  if (!CollectionGrids[tab_name].batchSizeSet) {
+    CollectionGrids[tab_name].batchSize = unloaded <= 350 ? 350 : CollectionGrids[tab_name].batchSize || 20;
+    CollectionGrids[tab_name].batchSizeSet = true;
+  } else {
+    console.log('using existing batch size', CollectionGrids[tab_name].batchSize || 20);
+  }
+  
+  if (still_more) {
+    // console.log('remaining items', unloaded);
+    html.classList.add('loading');
+    if (status) status.innerText = `Loading... be patient if there are a lot of items! (${unloaded} left)`;
+
+    /* 
+    collection endpoint: https://bandcamp.com/api/fancollection/1/collection_items
+    wishlist endpoint:   https://bandcamp.com/api/fancollection/1/wishlist_items
+    POST payload example: {"fan_id":<id>,"older_than_token":"1674387357:1318879238:a::"}
+    count: <batchSize> is added to payload when set
+    */
     CollectionGrids[tab_name].paginate().then((res) => {
-      // res = the array of items
-      // res[n].also_collected_count = num collections it appears in
+      /* 
+        res = the array of items, which in the actual http response is response.items
+        res[n].also_collected_count = num collections it appears in
+        
+        response.last_token -> older_than_token for the next batch
+        response.more_available bool
+      */
       // console.log('done loading, response:', res);
       still_more = CollectionGrids[tab_name].sequence.length < CollectionGrids[tab_name].itemCount;
       console.log('loaded', CollectionGrids[tab_name].sequence.length, 'of', CollectionGrids[tab_name].itemCount, 'still more?', still_more);
@@ -739,5 +776,7 @@ function load_more_items(tab_name) {
   } else {
     html.classList.remove('loading');
     if (status) status.innerText = '';
+    CollectionGrids[tab_name].batchSize = undefined;
+    CollectionGrids[tab_name].batchSizeSet = undefined;
   }
 }
