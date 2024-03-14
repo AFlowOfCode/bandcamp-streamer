@@ -50,9 +50,6 @@ Firefox: [https://addons.mozilla.org/en-US/firefox/addon/bandcamp-streamer/](htt
   * Any donation no matter how small is appreciated. Much like making music, writing browser extensions is often a labor of love with little to no financial benefits in return for a lot of heart and effort.
 
   * https://www.paypal.me/aflowofcode
-  * BTC: 1Juw5ZBdWujAYErTqGd6DwU48xL7HnnF6T
-  * ETH: 0x54e0beAAF0fA4858e9671aCcDEb4d5C4d4f41f95
-  * BCH: bitcoincash:qpaw45z4w4pudgdtevh5ysrwyf0xkmrq4cv69zjhc9
 
 ### Changelog
 

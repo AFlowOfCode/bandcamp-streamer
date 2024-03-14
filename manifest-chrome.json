@@ -1,17 +1,14 @@
 {
     "name": "Bandcamp Streamer",
-    "version": "1.4.1",
+    "version": "1.4.2",
     "description": "Continuously stream from Bandcamp feed, collection, & wishlist pages + other cool features.",
-    "permissions": [
-        "https://bandcamp.com/*/feed",
-        "https://bandcamp.com/*",
+    "manifest_version": 3,
+    "host_permissions": [
         "https://*.bandcamp.com/*"
     ],
     "content_scripts": [
         {
             "matches": [
-                "https://bandcamp.com/*/feed",
-                "https://bandcamp.com/*",
                 "https://*.bandcamp.com/*"
             ],
             "css": [
@@ -23,14 +20,15 @@
         }
     ],
     "web_accessible_resources": [
-        "contentScript.js",
-        "modules/*.js"
+      {
+        "resources": ["contentScript.js", "modules/*.js"],
+        "matches": ["https://*.bandcamp.com/*"]
+      }
     ],
     "icons": {
       "16": "images/icon16.png",
       "32": "images/icon32.png",
       "48": "images/icon48.png",
       "128": "images/icon128.png"
-    },
-    "manifest_version": 2
+    }
   }

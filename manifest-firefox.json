@@ -5,8 +5,6 @@
     "content_scripts": [
         {
             "matches": [
-                "https://bandcamp.com/*/feed",
-                "https://bandcamp.com/*",
                 "https://*.bandcamp.com/*"
             ],
             "css": [
