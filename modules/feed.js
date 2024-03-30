@@ -142,23 +142,17 @@ export function initFeedPlaylist(FeedPlaylist) {
 
   // Methods
   FeedPlaylist.prototype.playpause = function(e) {
-    if (e) {
-        e.preventDefault();
-    }
+    if (e) e.preventDefault();
     return this.playlist.playpause();
   };
 
   FeedPlaylist.prototype.next = function(e) {
-    if (e) {
-        e.preventDefault();
-    }
+    if (e) e.preventDefault();
     return this.playlist.next_track();
   };
 
   FeedPlaylist.prototype.previous = function(e) {
-    if (e) {
-        e.preventDefault();
-    }
+    if (e) e.preventDefault();
     return this.playlist.prev_track();
   };
 
@@ -253,6 +247,7 @@ export function initFeedPlaylist(FeedPlaylist) {
           wayContainer = document.createElement('div'),
           posContainer = document.createElement('div'),
           volContainer = document.createElement('div');
+
     container.id = 'player-controls-container';
     wayContainer.id = "track_play_waypoint_controls";
     wayContainer.classList.add('player-controls');
@@ -277,10 +272,9 @@ export function initFeedPlaylist(FeedPlaylist) {
 
     infos.map(info => {
       let element = document.createElement('span');
-      if (info.id) {
-          element.id = info.id;
-      }
+      if (info.id) element.id = info.id;
       element.innerText = info.text;
+
       if (info.vol) {
         volContainer.appendChild(element);
       } else {
@@ -289,6 +283,36 @@ export function initFeedPlaylist(FeedPlaylist) {
     });
 
     wayContainer.appendChild(posContainer);
+
+    // add seek controls
+
+    let seekers = document.createElement('p'),
+        seek_back = document.createElement('span'),
+        seek_title = document.createElement('span'),
+        seek_forward = document.createElement('span');
+
+    seekers.id = 'seekers';
+    seek_back.id = 'seek-back';
+    seek_back.innerText = '<<';
+    seek_title.innerText = '(seek)';
+    seek_forward.id = 'seek-forward';
+    seek_forward.innerText = '>>';
+    seekers.appendChild(seek_back);
+    seekers.appendChild(seek_title);
+    seekers.appendChild(seek_forward);
+    container.appendChild(seekers);
+
+    seek_back.addEventListener('click', () => seek('back'));
+    seek_forward.addEventListener('click', () => seek('forward'));
+
+    function seek(direction) {
+      const fp = feedPlayer,
+            seek_rate = 10,
+            new_val = direction == 'forward' ? fp._position + seek_rate : fp._position - seek_rate;
+
+      // jumps to the second passed in, skips to next track if at end
+      bcplayer._playlist._player.seek(new_val);
+    }
 
     controls.map(control => {
       let element;

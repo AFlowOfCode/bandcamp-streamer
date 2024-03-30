@@ -10,7 +10,7 @@ html.search-results-hidden #wishlist-search-grid {
 }
 
 #player-controls-container {
-    height: 48px;
+    height: 68px;
     position: fixed;
     width: 290px;
     background:rgba(0, 0, 0, 0.8);
@@ -21,8 +21,24 @@ html.search-results-hidden #wishlist-search-grid {
     margin: 0;
     border-radius: 0;
     z-index: 101;
-
 }
+
+#seekers {
+    margin-top: 6px;
+    margin-bottom: 3px;
+    display: flex;
+    justify-content: space-between;
+    padding: 0 10px;
+}
+
+#seekers > * {
+    color: white;
+}
+
+#seek-back, #seek-forward {
+    cursor: pointer;
+}
+
 #track_play_waypoint_controls {
     margin-top: 6px;
 }
@@ -33,6 +49,7 @@ html.search-results-hidden #wishlist-search-grid {
     display: inline-block;
     width: 80px;
 }
+
 #track_play_waypoints_controls_duration {
     margin-right: 29px;
 }
@@ -53,7 +70,7 @@ html.search-results-hidden #wishlist-search-grid {
 }
 
 #sidebar .track_play_waypoint.stream-activated, #sidebar .track_play_waypoint.activated {
-    bottom: 48px !important;
+    bottom: 68px !important;
     opacity: 1 !important;
 }
 

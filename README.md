@@ -53,6 +53,10 @@ Firefox: [https://addons.mozilla.org/en-US/firefox/addon/bandcamp-streamer/](htt
 
 ### Changelog
 
+##### 1.5.0
+  * Supporters infobox (extension icon click)
+  * Add seek buttons to feed player
+
 ##### 1.4.2
   * Fix "view all" loading dupe tracks at end of large collections
   * Add count of pending tracks to load during "view all" 
