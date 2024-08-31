@@ -1,11 +1,14 @@
 {
     "name": "Bandcamp Streamer",
-    "version": "1.5.0",
+    "version": "1.6.0",
     "description": "Continuously stream from Bandcamp feed, collection, & wishlist pages + other cool features.",
     "manifest_version": 3,
     "host_permissions": [
         "https://*.bandcamp.com/*"
     ],
+    "background": {
+        "service_worker": "background.js"
+    },
     "content_scripts": [
         {
             "matches": [

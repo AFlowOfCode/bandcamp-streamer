@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<head>
+	<meta charset="utf-8">
+	<title>Bandcamp Streamer v1.6.0</title>
+	<style>
+		@font-face {
+		    font-family: 'luxi_sansbold_oblique';
+	        src: url('fonts/luxisbi-webfont.woff') format('woff');
+		    font-weight: normal;
+		    font-style: normal;
+
+		}
+
+		html {
+			background-color: lightblue;
+			min-height: 100%;
+		}
+
+		body {
+			color: black;
+			font-size: 16px;
+			margin: 2em;
+			text-align: center;
+		}
+
+		img#banner {
+			box-shadow: 10px 10px 13px -1px #666;
+			width: 33%;
+			max-width: 1400px;
+			min-width: 560px;
+		}
+
+		main {
+			display: grid;
+			grid-template-columns: 1fr 1fr 1fr;
+			grid-gap: 1em;
+			text-align: left;
+		}
+
+		h1 {
+			font-family: 'luxi_sansbold_oblique';
+			text-shadow: 2px 1px 1px fuchsia;
+		}
+
+		main > div {
+			background-color: #303030;
+			border: 3px dashed fuchsia;
+			box-shadow: 10px 10px 13px -1px #666;
+			color: lightblue;
+			height: max-content;
+			padding: 1em;
+		}
+
+		#supporters {
+			background: linear-gradient(225deg, pink 0%, lightgreen 33%, lightseagreen 66%, skyblue 100%);
+			color: black;
+		}
+		#supporters ul {
+			list-style: none;
+			font-size: 1.2em;
+		}
+		#supporters ul li:first-child::before {
+			content: "👽 ";
+		}
+
+		a {
+			color: #E60283;  /* dark fuchsia */
+			font-weight: bold;
+			text-decoration: none;
+		}
+
+		details {
+			max-width: 350px;
+		}
+	</style>
+</head>
+
+<html>
+	<body>
+		<a href="http://www.github.com/aflowofcode/bandcamp-streamer" target="_blank">
+			<img id="banner" src="images/bandcamp-streamer-1400-x-560.jpg">
+		</a>
+
+		<h1>Enhancing usability & music discovery since 2019</h1>
+
+		<main>
+			<div id="changes">
+				<h3>Updates in v1.6.0 (August 2024)</h3>
+				<ul>
+					<li>Welcome page</li>
+				</ul>
+				<p>
+					Comments, suggestions, and any other feedback is welcome! Submit bugs & feature requests on <a href="http://www.github.com/aflowofcode/bandcamp-streamer/issues" target="_blank">GitHub</a> or email <strong class="email">aflowofcode [at] gmail [dot] com</strong>.
+				</p>
+				<p>
+					🎶 Happy streaming! 🎵
+				</p>
+				<p>
+					✨⭐ Don't forget to leave a rating! ⭐✨
+				</p>
+
+				<details>
+					<summary>Potential feature (wish)list</summary>
+					<ul>
+						<li>Custom playlists with export/backup ability</li>
+						<li>Search by tag (generate tag-based playlists)</li>
+						<li>Generate playlists based on collection rarity (i.e. your items that appear in <= 50 total collections, >= 1000, etc)</li>
+						<li>Stats / collection analysis (tag/rarity percentages, etc, suggestions?) for both your & others' collections</li>
+						<li>Enable streaming on the official Discover & Tag pages</li>
+						<li>Your suggestion!</li>
+					</ul>
+					<p>
+						Many features are non-trivial to implement, so I'm considering adding a paid tier which unlocks advanced features such as those listed above. It's a fact that almost nobody views browser extensions as something to be paid for, but it takes a lot of time and effort to work on them nonetheless. 
+					</p>
+					<p>
+						If you'd be willing to make a one-time donation or pay a low monthly subscription fee for special access, please let me know along with what feature you'd most like to see!
+					</p>
+				</details>
+			</div>
+			<div id="supporters">
+				<h3>Supporter links:</h3>
+				<ul>
+					<li><a href="https://pinkabductionray.bandcamp.com" target="_blank">Pink Abduction Ray</a></li>
+				</ul>
+				<p>
+					The list (and this welcome page) can be viewed at any time by clicking on the extension icon. Check out some new music!
+				</p>
+				<details>
+					<summary>Have a link to share?</summary>
+					<p>This extension has a user base of over 1500 Bandcamp power users who are deeply interested in music and active on a daily basis.</p>
+					<p>Supporters donating >= $10 can optionally add a link to this list as a thank you for stimulating the maintenance & development of excellent features that will make your music experience better 💙</p> 
+					<p>Acceptable links: Bandcamp music or fan pages, DJ mix pages, radio shows, or other music-specific sites such as band/producer websites, collectives, labels, etc.</p>
+					<p>Send donations to <a href="https://www.paypal.me/aflowofcode">https://www.paypal.me/aflowofcode</a> with your desired link (& emoji!) in the note section, or send an email with any questions!</p>
+				</details>
+			</div>
+			<div id="news">
+				<h3>5 year anniversary compilation!</h3>
+				<p>
+					Since this extension is all about music discovery, I thought it would be cool to curate a compilation of users' music to celebrate its 5 year anniversary in October. I know lots of you are musicians, so what do you say? 
+				</p>
+				<p>
+					If you have music on Bandcamp, send links for up to 3 tracks to choose from to <strong class="email">aflowofcode [at] gmail [dot] com</strong>. All styles welcome as long as the music is yours!
+				</p>
+				<p>
+					<strong>Deadline: September 30, 2024.</strong>
+				</p>
+				<p> 
+					If there's enough interest & participation, I'll make a free compilation and embed it in this very page!
+				</p>
+			</div>
+		</main>
+	</body>
+</html>

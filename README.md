@@ -1,5 +1,5 @@
 <div align="center">
-<img src='bandcamp-streamer.jpg?raw=true' alt='promo image'>
+<img src='images/bandcamp-streamer.jpg?raw=true' alt='promo image'>
 </div>
 
 # Bandcamp Streamer
@@ -52,6 +52,9 @@ Firefox: [https://addons.mozilla.org/en-US/firefox/addon/bandcamp-streamer/](htt
   * https://www.paypal.me/aflowofcode
 
 ### Changelog
+
+##### 1.6.0
+  * Welcome page
 
 ##### 1.5.0
   * Supporters infobox (extension icon click)

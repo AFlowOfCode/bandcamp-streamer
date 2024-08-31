@@ -24,7 +24,7 @@ import { loadCollection } from './modules/profile.js';
   // band album index (.../music) -> gplayerviews == [] and other players are undefined
   if (!bcplayer && !colplayer && !albumplayer) return;
 
-  console.log('Bandcamp Streamer! (v1.5.0)');
+  console.log('Bandcamp Streamer! (v1.6.0)');
 
 
   // using more globals due to split into modules
