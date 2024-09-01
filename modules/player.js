@@ -12,6 +12,7 @@ export function addFunctions(colplayer) {
   
   // reverse playlist
   colplayer.reverse = function() {
+    console.log('reversing');
     colplayer.player2.stop();
     let reversed;
 
@@ -20,7 +21,7 @@ export function addFunctions(colplayer) {
     } else {
       reversed = !colplayer.isReversed ? clone_playlist(colplayer).reverse() : clone_playlist(colplayer);
     }
-    
+
     colplayer.player2.setTracklist(reversed);
     colplayer.isReversed = !colplayer.isReversed;
   };
@@ -167,6 +168,7 @@ export function catchErrors(player, page) {
  *    - undefined if current track is being playpaused
  */
 export function togglePlayButtons({item, is_playing} = {}) {
+  console.log('togglePlayButtons item & is_playing', item, is_playing);
   if (!item) return;
   let has_playing_class = item.classList.contains('playing');
   console.log('dom item playing toggle, is playing?', is_playing); 

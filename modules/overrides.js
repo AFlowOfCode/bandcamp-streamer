@@ -89,7 +89,15 @@ export function replaceFunctions(colplayer) {
   };
 
   self.playPause = function() {
-    console.log('playPause override triggered');
+    console.log('playPause override triggered', self.currentState());
+
+    // paused here means it's about to play
+    if (self.currentState() == "paused" & self.currentTrackIndex() == 0) {
+      // if playlist has been shuffled/reversed, need to do this or the wrong
+      // DOM item (the original first track) will be shown as playing 
+      self.setCurrentTrack(0);
+    }
+    
     let toggled = false;
     if (self.pendingUpdate()) {
       console.log('pending update');
