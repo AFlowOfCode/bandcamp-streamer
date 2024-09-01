@@ -26,12 +26,12 @@ Firefox: [https://addons.mozilla.org/en-US/firefox/addon/bandcamp-streamer/](htt
 ### Personal (owned) collection page features
   * Stream full albums continuously (moves onto next album after finishing) 
   * Stream a playlist of your favorite track from each release (plays first track from album if favorite not set)
-  * Shuffle either album or favorites playlist 
+  * Shuffle & reverse album & favorites playlists 
   * Continuous streaming of search results (full albums only)
 
 ### Wishlist page features
   * Stream all tracks continuously
-  * Shuffle wishlist tracks
+  * Shuffle & reverse wishlist playlist
   * Continuous streaming of search results
 
 ### Known issues
@@ -55,6 +55,7 @@ Firefox: [https://addons.mozilla.org/en-US/firefox/addon/bandcamp-streamer/](htt
 
 ##### 1.6.0
   * Welcome page
+  * Reverse playlist function
 
 ##### 1.5.0
   * Supporters infobox (extension icon click)

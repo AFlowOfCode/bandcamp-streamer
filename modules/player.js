@@ -1,15 +1,38 @@
-import { setQueueTitles, getItemKey, create_shuffler } from './profile.js';
+import { setQueueTitles, getItemKey, create_playlist_mods } from './profile.js';
+
+function clone_playlist(colplayer) {
+  return colplayer.currentPlaylist === 'albums' ? colplayer.albumPlaylist.slice() : 
+         colplayer.currentPlaylist === 'favorites' ? colplayer.collectionPlaylist.slice() :
+         colplayer.currentPlaylist === 'collection-search' ? colplayer.collection_search_playlist.slice() :
+         colplayer.currentPlaylist === 'wishlist-search' ? colplayer.wishlist_search_playlist.slice() :
+         colplayer.wishPlaylist.slice();
+}
 
 export function addFunctions(colplayer) {
+  
+  // reverse playlist
+  colplayer.reverse = function() {
+    colplayer.player2.stop();
+    let reversed;
+
+    if (colplayer.isShuffled) {
+      reversed = colplayer.player2.getTracklist().slice().reverse();
+    } else {
+      reversed = !colplayer.isReversed ? clone_playlist(colplayer).reverse() : clone_playlist(colplayer);
+    }
+    
+    colplayer.player2.setTracklist(reversed);
+    colplayer.isReversed = !colplayer.isReversed;
+  };
+
   // shuffle playlist
   colplayer.shuffle = function() {
     colplayer.player2.stop();
+    colplayer.isReversed = false;
     if (!colplayer.isShuffled) {
       console.log('shuffling');
 
-      let a = colplayer.currentPlaylist === 'albums' ? colplayer.albumPlaylist.slice() : 
-              colplayer.currentPlaylist === 'favorites' ? colplayer.collectionPlaylist.slice() :
-              colplayer.wishPlaylist.slice(),
+      let a = clone_playlist(colplayer),
           shufQueue = [],
           el = document.getElementById('shuffler');
 
@@ -48,12 +71,13 @@ export function addFunctions(colplayer) {
           let shufTrack = shuffledAlbum.length === 1 ? shuffledAlbum[0] : 
                           shuffledAlbum[Math.floor(Math.random() * shuffledAlbum.length)];
           item.setAttribute('data-shufflenum', shufTrack);
-          console.log('shuffled album:', a[shufTrack].title, 'chose:', shufTrack);
+          if (a[shufTrack]) console.log('shuffled album:', a[shufTrack].title, 'chose:', shufTrack);
         });
         setCurrentEl(document.getElementById(a[0].domId));
       }
       setQueueTitles(shufQueue);
     } else {
+      // player is already shuffled, so unshuffle
       const unshuffled = colplayer.currentPlaylist === 'albums' ? colplayer.albumPlaylist 
                        : colplayer.currentPlaylist === 'wish' ? colplayer.wishPlaylist 
                        : colplayer.collectionPlaylist,
@@ -67,8 +91,11 @@ export function addFunctions(colplayer) {
       setQueueTitles(regQueue);
       setCurrentEl(document.getElementById(unshuffled[0].domId));
       colplayer.isShuffled = false;
-      if (!shuffler) create_shuffler({place_in_dom: true});
-      if (shuffler) shuffler.innerText = '🔀 (shuffle!)';
+      if (!shuffler) {
+        create_playlist_mods({place_in_dom: true, only_return_shuffler: true});
+      } else {
+        shuffler.innerText = '🔀 (shuffle!)';        
+      } 
     }
   }; // colplayer.shuffle()
 

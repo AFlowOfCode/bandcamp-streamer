@@ -76,15 +76,26 @@ html.search-results-hidden #wishlist-search-grid {
 
 /* collection page */
 
+.carousel-player .queue ol {
+    height: calc(100% - 80px);
+}
+
+h2:has(#playlist-header) {
+    font-size: 17px;
+}
+
 #playlist-header {
     font-weight: 600;
 }
 
-#shuffler {
+#shuffler, #reverser {
     color:  blue;
     cursor: pointer;
-    font-size:0.7em; 
-    margin-left:10px; 
+    font-size: 0.7em; 
+}
+
+#reverser {
+    margin-left: 10px; 
 }
 
 .hidden {

@@ -409,18 +409,25 @@ function push_track({track, item_id, dom_id, playlist, title_list, list_name} = 
 }
 
 // place_in_dom used if missing
-export function create_shuffler({place_in_dom=false} = {}) {
+export function create_playlist_mods({place_in_dom=false, only_return_shuffler=false} = {}) {
   const queueHeader = document.querySelector('.queue-header h2'),
-        shuffler = document.createElement('span');
+        shuffler = document.createElement('span'),
+        reverser = document.createElement('span');
   if (!queueHeader) return;
+
   // console.log('creating shuffler, might attach to', queueHeader);
   shuffler.id = 'shuffler';
+  shuffler.innerText = '🔀 (shuffle!)';
+  shuffler.addEventListener('click', () => colplayer.shuffle());
+  reverser.id = 'reverser';
+  reverser.innerText = '⬅️ (reverse)';
+  reverser.addEventListener('click', () => colplayer.reverse());
+
   if (place_in_dom) {
     queueHeader.appendChild(shuffler);
-    shuffler.innerText = '🔀 (shuffle!)';
-    shuffler.addEventListener('click', () => colplayer.shuffle());
+    queueHeader.appendChild(reverser);
   }
-  return shuffler;
+  return only_return_shuffler ? shuffler : [shuffler, reverser];
 }
 
 function switch_playlists({init=false, switch_to} = {}) {
@@ -434,7 +441,9 @@ function switch_playlists({init=false, switch_to} = {}) {
   }
 
   // unshuffle
-  if (colplayer.isShuffled) colplayer.shuffle(); 
+  if (colplayer.isShuffled) colplayer.shuffle();
+  colplayer.isReversed = false;
+
   let queueHeader = document.querySelector('.queue-header h2');
 
   if (init) {
@@ -443,11 +452,10 @@ function switch_playlists({init=false, switch_to} = {}) {
         parent = document.querySelector('#collection-player .controls-extra'),
         startList = colplayer.isOwner ? 'albums' : 'favorites',
         header = document.createElement('span'),
-        shuffler = create_shuffler();
+        [shuffler, reverser] = create_playlist_mods();
 
     header.id = 'playlist-header';
     header.innerText = startList;
-    shuffler.innerText = '🔀 (shuffle!)';
 
     status.id = 'playlist-status';
     status.title = 'the playlist will update between tracks to preserve continuity and avoid disrupting the currently playing track';
@@ -458,20 +466,19 @@ function switch_playlists({init=false, switch_to} = {}) {
     if (queueHeader) {
       queueHeader.innerText = 'now playing ';
       queueHeader.appendChild(header);
-      // can only shuffle own collection & wishlist
+      queueHeader.appendChild(document.createElement('br'));
+      // can only shuffle/reverse own collection & wishlist
       if (colplayer.isOwner) queueHeader.appendChild(shuffler);
+      if (colplayer.isOwner) queueHeader.appendChild(reverser);
     }
 
     // only owners have full albums & can shuffle
     if (colplayer.isOwner) {
-      // switcher.href = '#';
-      // switcher.setAttribute('onclick','return false;');
       switcher.id = 'playlist-switcher';
       switcher.style.marginRight = '10px';
       switcher.innerText = 'Switch to favorite tracks';
       parent.prepend(switcher);
       switcher.addEventListener('click', () => switch_playlists({switch_to: 'favorites'}));
-      document.getElementById('shuffler').addEventListener('click', () => colplayer.shuffle());
     }
     parent.prepend(status);
     
@@ -492,7 +499,7 @@ function switch_playlists({init=false, switch_to} = {}) {
       if (header) header.innerText = 'wishlist';
       if (colplayer.isOwner) {
         switcher.innerText = '';
-        if (!shuffler) shuffler = create_shuffler({place_in_dom: true});
+        if (!shuffler) shuffler = create_playlist_mods({place_in_dom: true, only_return_shuffler: true});
         shuffler.classList.remove('hidden');
       }
     } else if (switch_to.indexOf('search') > -1) {
@@ -533,7 +540,7 @@ function switch_playlists({init=false, switch_to} = {}) {
         or there won't be a queue header
       */
       if (colplayer.isOwner) {
-        if (!shuffler) shuffler = create_shuffler({place_in_dom: true});
+        if (!shuffler) shuffler = create_playlist_mods({place_in_dom: true, only_return_shuffler: true});
         shuffler.classList.remove('hidden');
       }
     }      
