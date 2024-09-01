@@ -344,17 +344,18 @@ function add_to_playlist({
     if (fave_track) track = fave_track;
   }
 
-  // trackData.title is null when an item has no streamable track
-  // dom item data-trackid attribute is "" when no streamable track
-  // bc also has a zombie entry for subscriber only items which gets stuck in an endless fetch loop
-  let can_push = track && 
-                 track.trackData.title !== null && 
+  /*
+  trackData.title is null (or undefined, hence != vs !==) when an item has no streamable track
+  dom item data-trackid attribute is "" when no streamable track
+  bc also has a zombie entry for subscriber only items which gets stuck in an endless fetch loop
+  */
+  let can_push = track?.trackData?.title != null && 
                  dom_list[index].getAttribute('data-trackid') &&
                  (is_owner || !is_subscriber_only);
   // console.log('list', list_name, 'can push', can_push);
 
   if (!can_push) {
-    console.log("missing track", item_key, track?.trackData?.title);
+    console.log("missing track", item_key, track?.trackData?.artist, track?.trackData?.title);
     if (list_name === 'wish') {
       colplayer.wish_missing++; 
       console.log('total missing from wish playlist', colplayer.wish_missing);
@@ -374,6 +375,11 @@ function add_to_playlist({
       push_track({track, item_id, dom_id, playlist, title_list, list_name});
     } else {
       console.log(`couldn't find playable track for item ${item_key}`, tracklist[item_key]);
+      const unplayable = document.getElementById(dom_id),
+            unplay = unplayable.querySelector('.collection-item-art');
+      unplayable.classList.add('unplayable');
+      unplay.addEventListener('click', e => e.stopPropagation());
+      unplay.title = "Track data missing";
     }
   }
 

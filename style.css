@@ -76,6 +76,14 @@ html.search-results-hidden #wishlist-search-grid {
 
 /* collection page */
 
+/* DOM items for which a playable track couldn't be found */
+.unplayable .track_play_auxiliary {
+    cursor: not-allowed;
+}
+.unplayable .track_play_auxiliary > .item_link_play {
+    display: none;
+}
+
 .carousel-player .queue ol {
     height: calc(100% - 80px);
 }

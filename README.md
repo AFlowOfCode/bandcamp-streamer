@@ -57,6 +57,7 @@ Firefox: [https://addons.mozilla.org/en-US/firefox/addon/bandcamp-streamer/](htt
   * Welcome page
   * Reverse playlist function
   * Fix wrong art active for first track in shuffled playlist
+  * Prevent clicking on unplayable items from halting playlist
 
 ##### 1.5.0
   * Supporters infobox (extension icon click)
