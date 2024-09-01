@@ -22,6 +22,23 @@ export function addFunctions(colplayer) {
       reversed = !colplayer.isReversed ? clone_playlist(colplayer).reverse() : clone_playlist(colplayer);
     }
 
+    const attr = colplayer.isShuffled ? 'data-shufflenum' : 
+                 colplayer.currentPlaylist.indexOf('search') > -1 ? 'data-searchnum' :
+                 'data-tracknum';
+
+    reversed.forEach((track, i) => {
+      const dom_item = document.getElementById(track.domId);
+      dom_item.setAttribute(attr, i);
+      if (colplayer.currentPlaylist == 'albums' || colplayer.currentPlaylist.indexOf('search')) {
+        /*
+        "first" track of an album doesn't really apply when shuffled or reversed, 
+        but it has to be something otherwise clicking on the album art will play 
+        something else entirely
+        */
+        dom_item.setAttribute('data-firsttrack', i);
+      }
+    });
+
     colplayer.player2.setTracklist(reversed);
     colplayer.isReversed = !colplayer.isReversed;
   };
