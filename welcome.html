@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <head>
 	<meta charset="utf-8">
-	<title>Bandcamp Streamer v1.6.0</title>
+	<title>Bandcamp Streamer v1.6.1</title>
 	<style>
 		@font-face {
 		    font-family: 'luxi_sansbold_oblique';
@@ -42,6 +42,10 @@
 			text-shadow: 2px 1px 1px fuchsia;
 		}
 
+		h3 {
+			margin-top: 0;
+		}
+
 		main > div {
 			background-color: #303030;
 			border: 3px dashed fuchsia;
@@ -51,13 +55,13 @@
 			padding: 1em;
 		}
 
-		#supporters {
+		#compilation {
 			background: linear-gradient(225deg, pink 0%, lightgreen 33%, lightseagreen 66%, skyblue 100%);
 			color: black;
 		}
 		#supporters ul {
 			list-style: none;
-			font-size: 1.2em;
+			font-size: 1.1em;
 		}
 		#supporters ul li:first-child::before {
 			content: "👽 ";
@@ -85,6 +89,10 @@
 
 		<main>
 			<div id="changes">
+				<h3>Updates in v1.6.1 (October 2024)</h3>
+				<ul>
+					<li>Embed 5 year anniversary compilation</li>
+				</ul>
 				<h3>Updates in v1.6.0 (September 2024)</h3>
 				<ul>
 					<li>Welcome page</li>
@@ -113,12 +121,22 @@
 						<li>Your suggestion!</li>
 					</ul>
 					<p>
-						Many features are non-trivial to implement, so I'm considering adding a paid tier which unlocks advanced features such as those listed above. It's a fact that almost nobody views browser extensions as something to be paid for, but it takes a lot of time and effort to work on them nonetheless. 
+						Many features are non-trivial to implement, so I'm considering adding a paid tier which unlocks advanced features such as those listed above. Almost nobody views browser extensions as something to be paid for, but it takes a lot of time and effort to work on them nonetheless. 
 					</p>
 					<p>
-						If you'd be willing to make a one-time donation or pay a low monthly subscription fee for special access, please let me know along with what feature you'd most like to see!
+						If you'd be willing to make a one-time donation or pay a low monthly subscription fee for special access, please let me know along with what feature you'd most like to see! 
 					</p>
 				</details>
+			</div>
+			<div id="compilation">
+				<h3>5 year anniversary compilation</h3>
+				<p>
+					To celebrate 5 years of Bandcamp Streamer, I'm happy to present a free/PWYW compilation with music made by users of the extension! Give it a spin!
+				</p>
+				<p>
+					Note: there can be an issue with BC embeds where they sometimes show up blank. If that happens please visit the release page at <a href="https://bcstreamer.bandcamp.com/album/5-year-anniversary-compilation" target="_blank">https://bcstreamer.bandcamp.com/album/5-year-anniversary-compilation</a>.
+				</p>
+				<iframe style="border: 0; width: 100%; height: 406px;" src="https://bandcamp.com/EmbeddedPlayer/album=1521969298/size=large/bgcol=ffffff/linkcol=0f91ff/artwork=small/transparent=false"><a href="https://bcstreamer.bandcamp.com/album/5-year-anniversary-compilation">5 Year Anniversary Compilation by Bandcamp Streamer</a></iframe>
 			</div>
 			<div id="supporters">
 				<h3>Supporter links:</h3>
@@ -135,21 +153,6 @@
 					<p>Acceptable links: Bandcamp music or fan pages, DJ mix pages, radio shows, or other music-specific sites such as band/producer websites, collectives, labels, etc.</p>
 					<p>Send donations to <a href="https://www.paypal.me/aflowofcode">https://www.paypal.me/aflowofcode</a> with your desired link (& emoji!) in the note section, or send an email with any questions!</p>
 				</details>
-			</div>
-			<div id="news">
-				<h3>5 year anniversary compilation!</h3>
-				<p>
-					Since this extension is all about music discovery, I thought it would be cool to curate a compilation of users' music to celebrate its 5 year anniversary in October 🎉 I know lots of you are musicians, so what do you say? 
-				</p>
-				<p>
-					If you have music on Bandcamp, send links for up to 3 tracks to choose from to <strong class="email">aflowofcode [at] gmail [dot] com</strong>. All styles welcome as long as the music is yours! ⚡
-				</p>
-				<p>
-					<strong>Deadline: September 30, 2024</strong>
-				</p>
-				<p> 
-					If there's enough interest & participation, I'll make a free compilation and embed it in this very page!
-				</p>
 			</div>
 		</main>
 	</body>

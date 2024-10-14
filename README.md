@@ -15,13 +15,14 @@ Firefox: [https://addons.mozilla.org/en-US/firefox/addon/bandcamp-streamer/](htt
   * Any other fan's collection / wishlist
 
 ### General features
-  * Volume control
+  * Load entire collections & wishlists in one click (be patient if there are a lot of items!)
   * Spacebar play/pause, L/R arrow keys to skip to previous/next track in the playlist
-  * Beta: Load entire collections & wishlists in one click (be patient if there are a lot of items!)
+  * Volume control
       
 ### Feed page features 
   * Nonstop streaming from 2 separate playlists: fan activity or new releases
   * Price listed next to "buy now"
+  * Seek buttons (+/- 10s) 
   
 ### Personal (owned) collection page features
   * Stream full albums continuously (moves onto next album after finishing) 
@@ -36,22 +37,31 @@ Firefox: [https://addons.mozilla.org/en-US/firefox/addon/bandcamp-streamer/](htt
 
 ### Known issues
   * If the collection/wishlist playlist has been shuffled when more tracks are added, it becomes unshuffled and playback stops. It is recommended to load all the desired tracks to the page first, then shuffle and start the playlist.  
-  * If you are playing from collection/wishlist search results & click to another tab, the current track will continue playing but the playlist will be lost.  
+  * If you are playing from collection/wishlist search results & click to another profile tab, the current track will continue playing but the playlist will be lost.  
   * If an item has been displayed in both collection or wishlist tab & the tab's search results, clicking on the item in the bottom player bar won't scroll to the correct location.  
-  * Loading entire collections/wishlists with over ~1000 items may be buggy
 
 ### What this extension does not do
   * Allow you to add a full album to your wishlist and then stream the whole thing. Playing only the first or featured track of an album in your wishlist is a Bandcamp limitation that this extension does not try to circumvent. You can do two things: support the artist and buy the album (best option for full flexibility + cool factor), or add each individual track from the album to your wishlist if possible. 
   * Attempt to track you or any of your data in any way, or communicate with any third parties for any reason. This is a 100% privacy respecting extension.
 
-### Support development
-  * If you appreciate the extension, consider showing some support! Please leave a rating and some feedback, it's always motivating to hear from people who enjoy and find it useful. Suggestions and bug reports are always welcome, preferably on Github.
+### What people say
+⚡ "it is something I use literally everyday"  
+⚡ "My god this is exactly what i've been looking for"  
+⚡ "Thank you for such a amazing extension"  
+⚡ "Been wanting something like this for a while, glad I searched it up"  
+⚡ "i would give 10 stars if i could"  
 
-  * Any donation no matter how small is appreciated. Much like making music, writing browser extensions is often a labor of love with little to no financial benefits in return for a lot of heart and effort.
+### Support development
+  * Please leave a rating and some feedback! It's always motivating to hear from people who enjoy and find this useful. Suggestions and bug reports are always welcome too!
+
+  * Any donation is appreciated! Much like making music, writing browser extensions is often a labor of love with little to no financial benefits in return for a lot of heart and effort.
 
   * https://www.paypal.me/aflowofcode
 
 ### Changelog
+
+##### 1.6.1
+  * Embed 5 year anniversary compilation in welcome page
 
 ##### 1.6.0
   * Welcome page
