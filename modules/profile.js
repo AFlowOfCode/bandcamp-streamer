@@ -1,5 +1,5 @@
 import { setCurrentEl, togglePlayButtons, assignTransButtons } from './player.js';
-import { observeTotal } from './shared.js';
+import { observeTotal, create_seekers } from './shared.js';
 
 export function loadCollection(tab) {
   colplayer.isOwner = document.getElementById('fan-banner').classList.contains('owner');
@@ -27,6 +27,11 @@ export function loadCollection(tab) {
   replaceClickHandlers();
   // "view all" button to load entire collection/wishlist
   init_true_view_all(tab);
+  // add seek buttons
+  create_seekers(
+    document.querySelector('#carousel-player .progress-transport'),
+    colplayer
+  );
 
   // monitor collection searches in order to build a search playlist
   // note: search is only available on own profile

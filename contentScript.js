@@ -24,7 +24,7 @@ import { loadCollection } from './modules/profile.js';
   // band album index (.../music) -> gplayerviews == [] and other players are undefined
   if (!bcplayer && !colplayer && !albumplayer) return;
 
-  console.log('Bandcamp Streamer! (v1.6.1)');
+  console.log('Bandcamp Streamer! (v1.7.0)');
 
 
   // using more globals due to split into modules
@@ -104,10 +104,9 @@ import { loadCollection } from './modules/profile.js';
   window.currentList = 'feed';
   window.nowPlaying = document.getElementById('track_play_waypoint');
 
-  initFeedPlaylist(FeedPlaylist);
-
   // init feed player
-  window.feedPlayer = bcplayer ? new FeedPlaylist(bcplayer, originalPlaylist) : false;   
+  initFeedPlaylist(FeedPlaylist);  
+  window.feedPlayer = bcplayer ? new FeedPlaylist(bcplayer, originalPlaylist) : false; 
 
   bindControlKeys({
     bcplayer,

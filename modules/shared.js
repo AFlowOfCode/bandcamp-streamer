@@ -123,3 +123,40 @@ export function observeTotal(page, parent) {
   }); // observer definition
   observer.observe(parent, options);
 } // observeTotal
+
+export function create_seekers(container, player) {
+  let seekers = document.createElement('p'),
+      seek_back = document.createElement('span'),
+      seek_title = document.createElement('span'),
+      seek_forward = document.createElement('span');
+
+    seekers.id = 'seekers';
+    
+    seek_back.id = 'seek-back';
+    seek_back.innerText = '<<';
+    seek_back.title = 'back 10s';
+
+    seek_title.innerText = '(seek)';
+
+    seek_forward.id = 'seek-forward';
+    seek_forward.innerText = '>>';
+    seek_forward.title = 'forward 10s';
+
+    seekers.appendChild(seek_back);
+    seekers.appendChild(seek_title);
+    seekers.appendChild(seek_forward);
+    container.appendChild(seekers);
+
+    seek_back.addEventListener('click', () => seek('back', player));
+    seek_forward.addEventListener('click', () => seek('forward', player));
+}
+
+function seek(direction, player) {
+  const seek_rate = 10,
+        position = bcplayer ? player._position : player.player2._playlist._position,
+        new_val = direction == 'forward' ? position + seek_rate : position - seek_rate;
+
+  // jumps to the second passed in, skips to next track if at end
+  if (bcplayer) bcplayer._playlist._player.seek(new_val);
+  if (colplayer) colplayer.player2._playlist.seek(new_val);
+}

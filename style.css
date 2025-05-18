@@ -35,6 +35,16 @@ html.search-results-hidden #wishlist-search-grid {
     color: white;
 }
 
+#carousel-player #seekers {
+    margin-top: 26px;
+    width: 110px;
+    color: black;
+}
+
+#carousel-player #seekers > * {
+    color: black;
+}
+
 #seek-back, #seek-forward {
     cursor: pointer;
 }

@@ -1,4 +1,4 @@
-import { countInArray, observeTotal } from './shared.js';
+import { countInArray, observeTotal, create_seekers } from './shared.js';
 
 export function FeedPlaylist(bcplayer, originalPlaylist) {
     
@@ -285,34 +285,7 @@ export function initFeedPlaylist(FeedPlaylist) {
     wayContainer.appendChild(posContainer);
 
     // add seek controls
-
-    let seekers = document.createElement('p'),
-        seek_back = document.createElement('span'),
-        seek_title = document.createElement('span'),
-        seek_forward = document.createElement('span');
-
-    seekers.id = 'seekers';
-    seek_back.id = 'seek-back';
-    seek_back.innerText = '<<';
-    seek_title.innerText = '(seek)';
-    seek_forward.id = 'seek-forward';
-    seek_forward.innerText = '>>';
-    seekers.appendChild(seek_back);
-    seekers.appendChild(seek_title);
-    seekers.appendChild(seek_forward);
-    container.appendChild(seekers);
-
-    seek_back.addEventListener('click', () => seek('back'));
-    seek_forward.addEventListener('click', () => seek('forward'));
-
-    function seek(direction) {
-      const fp = feedPlayer,
-            seek_rate = 10,
-            new_val = direction == 'forward' ? fp._position + seek_rate : fp._position - seek_rate;
-
-      // jumps to the second passed in, skips to next track if at end
-      bcplayer._playlist._player.seek(new_val);
-    }
+    create_seekers(container, this);
 
     controls.map(control => {
       let element;
