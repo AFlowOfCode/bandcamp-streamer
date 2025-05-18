@@ -27,6 +27,11 @@
 			details {
 				max-width: 350px;
 			}
+
+			#hotkeys li {
+				display: flex;
+				justify-content: space-between;
+			}
 		</style>
 	</head>
 
@@ -42,9 +47,10 @@
 				<p>This extension has a user base of over 1500 Bandcamp power users who are deeply interested in music and active on a daily basis.</p>
 				<p>Supporters donating >= $10 can optionally add a link to this list as a thank you for stimulating the maintenance & development of excellent features that will make your music experience better 💙</p> 
 				<p>Acceptable links: Bandcamp music or fan pages, DJ mix pages, radio shows, or other music-specific sites such as band/producer websites, collectives, labels, etc.</p>
-				<p>Send donations to <a href="https://www.paypal.me/aflowofcode">https://www.paypal.me/aflowofcode</a> with your desired link (& emoji!) in the note section, or send an email to <strong class="email">aflowofcode [at] gmail [dot] com</strong> with any questions!</p>
+				<p>Send donations to <a href="https://www.paypal.me/aflowofcode">https://www.paypal.me/aflowofcode</a> or <a href="https://cash.app/$AFOC">https://cash.app/$AFOC</a> with your desired link (& emoji!) in the note section, or send an email to <strong class="email">aflowofcode [at] gmail [dot] com</strong> with any questions!</p>
 				<p>🎶 Happy streaming! 🎵</p>
 			</details>
+
 			<ul>
 				<li>
 					<a href="/welcome.html" target=_blank>welcome page</a>
@@ -52,6 +58,15 @@
 				<li>
 					<a href="https://bcstreamer.bandcamp.com/album/5-year-anniversary-compilation" target="_blank">5 year anniversary compilation</a>
 				</li>
+			</ul>
+
+			<h3>Hotkeys:</h3>
+			<ul id="hotkeys">
+				<li><kbd>Space</kbd>       play/pause</li>
+				<li><kbd>Left arrow</kbd>  previous track</li>
+				<li><kbd>Right arrow</kbd> next track</li>
+				<li><kbd>Comma</kbd>       seek -10s</li>
+				<li><kbd>Period</kbd>      seek +10s</li>
 			</ul>
 		</div>
 	</body>

@@ -59,11 +59,12 @@
 			background: linear-gradient(225deg, pink 0%, lightgreen 33%, lightseagreen 66%, skyblue 100%);
 			color: black;
 		}
+
 		#supporters ul {
 			list-style: none;
 			font-size: 1.1em;
 		}
-		#supporters ul li:first-child::before {
+		#supporters ul#supporter-links li:first-child::before {
 			content: "👽 ";
 		}
 
@@ -75,6 +76,12 @@
 
 		details {
 			max-width: 350px;
+			margin-bottom: 1em;
+		}
+
+		#hotkeys li {
+			display: flex;
+			justify-content: space-between;
 		}
 	</style>
 </head>
@@ -91,12 +98,15 @@
 			<div id="changes">
 				<h3>Updates in v1.7.0 (May 2025)</h3>
 				<ul>
-					<li>seek buttons for profile player</li>
+					<li>Seek buttons for profile player</li>
+					<li>Hotkey list</li>
 				</ul>
+
 				<h3>Updates in v1.6.1 (October 2024)</h3>
 				<ul>
 					<li>Embed 5 year anniversary compilation</li>
 				</ul>
+
 				<h3>Updates in v1.6.0 (September 2024)</h3>
 				<ul>
 					<li>Welcome page</li>
@@ -104,6 +114,7 @@
 					<li>Fix wrong art active for first track in shuffled playlist</li>
 					<li>Prevent clicking on unplayable items from halting playlist</li>
 				</ul>
+
 				<p>
 					Comments, suggestions, and any other feedback is welcome! Submit bugs & feature requests on <a href="http://www.github.com/aflowofcode/bandcamp-streamer/issues" target="_blank">GitHub</a> or email <strong class="email">aflowofcode [at] gmail [dot] com</strong>.
 				</p>
@@ -119,7 +130,7 @@
 					<ul>
 						<li>Custom playlists with export/backup ability</li>
 						<li>Search by tag (generate tag-based playlists)</li>
-						<li>Generate playlists based on collection rarity (i.e. your items that appear in <= 50 total collections, >= 1000, etc)</li>
+						<li>Generate playlists based on collection rarity (i.e. items that appear in <= 50 total collections, >= 1000, etc)</li>
 						<li>Stats / collection analysis (tag/rarity percentages, etc, suggestions?) for both your & others' collections</li>
 						<li>Enable streaming on the official Discover & Tag pages</li>
 						<li>Your suggestion!</li>
@@ -144,7 +155,7 @@
 			</div>
 			<div id="supporters">
 				<h3>Supporter links:</h3>
-				<ul>
+				<ul id='supporter-links'>
 					<li><a href="https://pinkabductionray.bandcamp.com" target="_blank">Pink Abduction Ray</a></li>
 				</ul>
 				<p>
@@ -155,8 +166,19 @@
 					<p>This extension has a user base of over 1500 Bandcamp power users who are deeply interested in music and active on a daily basis.</p>
 					<p>Supporters donating >= $10 can optionally add a link to this list as a thank you for stimulating the maintenance & development of excellent features that will make your music experience better 💙</p> 
 					<p>Acceptable links: Bandcamp music or fan pages, DJ mix pages, radio shows, or other music-specific sites such as band/producer websites, collectives, labels, etc.</p>
-					<p>Send donations to <a href="https://www.paypal.me/aflowofcode">https://www.paypal.me/aflowofcode</a> with your desired link (& emoji!) in the note section, or send an email with any questions!</p>
+					<p>Send donations to <a href="https://www.paypal.me/aflowofcode">https://www.paypal.me/aflowofcode</a> or <a href="https://cash.app/$AFOC">https://cash.app/$AFOC</a> with your desired link (& emoji!) in the note section, or send an email with any questions!</p>
 				</details>
+
+				<hr>
+
+				<h3>Hotkeys:</h3>
+				<ul id="hotkeys">
+					<li><kbd>Space</kbd>       play/pause</li>
+					<li><kbd>Left arrow</kbd>  previous track</li>
+					<li><kbd>Right arrow</kbd> next track</li>
+					<li><kbd>Comma</kbd>       seek -10s</li>
+					<li><kbd>Period</kbd>      seek +10s</li>
+				</ul>
 			</div>
 		</main>
 	</body>

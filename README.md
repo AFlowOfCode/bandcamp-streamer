@@ -18,11 +18,11 @@ Firefox: [https://addons.mozilla.org/en-US/firefox/addon/bandcamp-streamer/](htt
   * Load entire collections & wishlists in one click (be patient if there are a lot of items!)
   * Spacebar play/pause, L/R arrow keys to skip to previous/next track in the playlist
   * Volume control
+  * Seek buttons (+/- 10s) via click or comma & period keys
       
 ### Feed page features 
   * Nonstop streaming from 2 separate playlists: fan activity or new releases
   * Price listed next to "buy now"
-  * Seek buttons (+/- 10s) 
   
 ### Personal (owned) collection page features
   * Stream full albums continuously (moves onto next album after finishing) 
@@ -57,8 +57,13 @@ Firefox: [https://addons.mozilla.org/en-US/firefox/addon/bandcamp-streamer/](htt
   * Any donation is appreciated! Much like making music, writing browser extensions is often a labor of love with little to no financial benefits in return for a lot of heart and effort.
 
   * https://www.paypal.me/aflowofcode
+  * https://cash.app/$AFOC
 
 ### Changelog
+
+##### 1.7.0
+  * Seek buttons for profile player
+  * Hotkey list
 
 ##### 1.6.1
   * Embed 5 year anniversary compilation in welcome page

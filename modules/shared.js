@@ -17,7 +17,7 @@ export function bindControlKeys({bcplayer, colplayer, albumplayer} = {}) {
     }
   });
   document.addEventListener('keyup', (e) => {
-    const controlKey = e.code === 'Space' || e.code === 'ArrowLeft' || e.code === 'ArrowRight';
+    const controlKey = e.code === 'Space' || e.code === 'ArrowLeft' || e.code === 'ArrowRight' || e.code == 'Period' || e.code == 'Comma';
     if (controlKey && e.target == document.body) {
       if (bcplayer !== undefined) {
         // console.log('feed', bcplayer)
@@ -30,6 +30,12 @@ export function bindControlKeys({bcplayer, colplayer, albumplayer} = {}) {
             break;
           case 'ArrowRight':
             feedPlayer.next();
+            break;
+          case 'Comma':
+            seek('back', feedPlayer);
+            break;
+          case 'Period':
+            seek('forward', feedPlayer);
             break;
         }
       } else if (colplayer !== undefined) {
@@ -44,6 +50,12 @@ export function bindControlKeys({bcplayer, colplayer, albumplayer} = {}) {
             break;
           case 'ArrowRight':
             colplayer.player2.next();
+            break;
+          case 'Comma':
+            seek('back', colplayer);
+            break;
+          case 'Period':
+            seek('forward', colplayer);
             break;
         }
       } else if (albumplayer !== undefined) {
@@ -131,7 +143,7 @@ export function create_seekers(container, player) {
       seek_forward = document.createElement('span');
 
     seekers.id = 'seekers';
-    
+
     seek_back.id = 'seek-back';
     seek_back.innerText = '<<';
     seek_back.title = 'back 10s';
