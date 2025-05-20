@@ -29,7 +29,7 @@ function restoreOptions() {
 }
 
 /*
-  If vals are wrong (according to input rules - only applicable to seeklength), 
+  If vals are wrong (according to input rules - only applicable to seekrate), 
   "submit" event is not even called. The options page doesn't support HTML5 validation 
   warnings, so proper error highlighting must be done manually.
 */
@@ -47,10 +47,10 @@ function mark_valid(input) {
 }
 
 function validate_input(input, num_invalid) {
-  if (input.id == 'seeklength' && !input.reportValidity()) {
+  if (input.id == 'seekrate' && !input.reportValidity()) {
     mark_invalid(input);
     num_invalid++;
-  } else if (input.id != 'seeklength' && keyboardevent_codes.indexOf(input.value) == -1) {
+  } else if (input.id != 'seekrate' && keyboardevent_codes.indexOf(input.value) == -1) {
     mark_invalid(input);
     num_invalid++;
   } else {

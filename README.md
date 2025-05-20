@@ -64,6 +64,7 @@ Firefox: [https://addons.mozilla.org/en-US/firefox/addon/bandcamp-streamer/](htt
 ##### 1.7.0
   * Seek buttons for profile player
   * Hotkey list
+  * Options page for hotkey & seek rate remapping
 
 ##### 1.6.1
   * Embed 5 year anniversary compilation in welcome page

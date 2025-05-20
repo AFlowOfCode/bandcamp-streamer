@@ -30,7 +30,7 @@ export function loadCollection(tab) {
   // add seek buttons
   create_seekers(
     document.querySelector('#carousel-player .progress-transport'),
-    colplayer
+    colplayer, window.prefs.seekrate
   );
 
   // monitor collection searches in order to build a search playlist

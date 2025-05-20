@@ -283,9 +283,8 @@ export function initFeedPlaylist(FeedPlaylist) {
     });
 
     wayContainer.appendChild(posContainer);
-
     // add seek controls
-    create_seekers(container, this);
+    create_seekers(container, this, window.prefs.seekrate);
 
     controls.map(control => {
       let element;

@@ -1,4 +1,4 @@
-import { bindControlKeys } from './modules/shared.js';
+import { set_prefs, bindControlKeys } from './modules/shared.js';
 import { replaceFunctions } from './modules/overrides.js';
 import { addFunctions, catchErrors } from './modules/player.js';
 import { FeedPlaylist, initFeedPlaylist } from './modules/feed.js';
@@ -24,8 +24,7 @@ import { loadCollection } from './modules/profile.js';
   // band album index (.../music) -> gplayerviews == [] and other players are undefined
   if (!bcplayer && !colplayer && !albumplayer) return;
 
-  console.log('Bandcamp Streamer! (v1.7.0)');
-
+  set_prefs();
 
   // using more globals due to split into modules
   // TODO: these should be namespaced
