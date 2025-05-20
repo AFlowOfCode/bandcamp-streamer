@@ -16,11 +16,7 @@ document.addEventListener("DOMContentLoaded", restoreOptions);
 function restoreOptions() {
   const inputs = document.querySelectorAll('input');
   inputs.forEach(input => {
-    let getting = browser.storage.sync.get(input.id);
-    getting.then(
-      result => setCurrentChoice(input, result), 
-      error => alert(`Error: ${error}`)
-    );
+    chrome.storage.sync.get(input.id, result => setCurrentChoice(input, result));
   });
 
   function setCurrentChoice(input, result) {
@@ -71,9 +67,17 @@ function saveOptions(e) {
 
   // alert(num_invalid);
   if (num_invalid == 0) {
-    let vals = {};
+    let vals = {},
+        btn = document.querySelector("button"),
+        btnColor = btn.style.backgroundColor;
     inputs.forEach(input => vals[input.id] = input.value);
-    browser.storage.sync.set(vals);
-    alert("Values saved!");
+    chrome.storage.sync.set(vals);
+
+    btn.style.backgroundColor = 'fuchsia';
+    btn.innerText = "Values saved!";
+    setTimeout(() => {
+      btn.style.backgroundColor = btnColor;
+      btn.innerText = "Save";
+    }, 3000);
   }
 }

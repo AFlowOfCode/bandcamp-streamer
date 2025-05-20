@@ -5,7 +5,7 @@
 	<style>
 		@font-face {
 		    font-family: 'luxi_sansbold_oblique';
-	        src: url('fonts/luxisbi-webfont.woff') format('woff');
+	        src: url('../fonts/luxisbi-webfont.woff') format('woff');
 		    font-weight: normal;
 		    font-style: normal;
 		}
@@ -73,6 +73,11 @@
 			text-decoration: none;
 		}
 
+		#supporter-links a {
+			font-family: 'luxi_sansbold_oblique';
+			font-weight: initial;
+		}
+
 		details {
 			max-width: 350px;
 			margin-bottom: 1em;
@@ -99,7 +104,7 @@
 				<ul>
 					<li>Seek buttons for profile player</li>
 					<li>Hotkey list</li>
-					<li>Options page for hotkey + seek rate remapping</li>
+					<li><a href="#" id="optionspage">Options page</a> for hotkey + seek rate remapping</li>
 				</ul>
 
 				<h3>Updates in v1.6.1 (October 2024)</h3>
@@ -139,7 +144,7 @@
 						Many features are non-trivial to implement, so I'm considering adding a paid tier which unlocks advanced features such as those listed above. Almost nobody views browser extensions as something to be paid for, but it takes a lot of time and effort to work on them nonetheless. 
 					</p>
 					<p>
-						If you'd be willing to make a one-time donation or pay a low monthly subscription fee for special access, please let me know along with what feature you'd most like to see! 
+						If you'd be willing to make a one-time donation, pay a low monthly subscription fee for special access, or even make a code contribution please let me know along with what feature you'd most like to see!
 					</p>
 				</details>
 			</div>
@@ -149,7 +154,7 @@
 					To celebrate 5 years of Bandcamp Streamer, I'm happy to present a free/PWYW compilation with music made by users of the extension! Give it a spin!
 				</p>
 				<p>
-					Note: there can be an issue with BC embeds where they sometimes show up blank. If that happens please visit the release page at <a href="https://bcstreamer.bandcamp.com/album/5-year-anniversary-compilation" target="_blank">https://bcstreamer.bandcamp.com/album/5-year-anniversary-compilation</a>.
+					Note: there can be an issue with BC embeds where they sometimes show up blank. If that happens please refresh the page or visit the release directly at <a href="https://bcstreamer.bandcamp.com/album/5-year-anniversary-compilation" target="_blank">https://bcstreamer.bandcamp.com/album/5-year-anniversary-compilation</a>.
 				</p>
 				<iframe style="border: 0; width: 100%; height: 406px;" src="https://bandcamp.com/EmbeddedPlayer/album=1521969298/size=large/bgcol=ffffff/linkcol=0f91ff/artwork=small/transparent=false"><a href="https://bcstreamer.bandcamp.com/album/5-year-anniversary-compilation">5 Year Anniversary Compilation by Bandcamp Streamer</a></iframe>
 			</div>
@@ -173,13 +178,15 @@
 
 				<h3>Hotkeys:</h3>
 				<ul id="hotkeys">
-					<li><kbd>Space</kbd>       play/pause</li>
-					<li><kbd>Left arrow</kbd>  previous track</li>
-					<li><kbd>Right arrow</kbd> next track</li>
-					<li><kbd>Comma</kbd>       seek -10s</li>
-					<li><kbd>Period</kbd>      seek +10s</li>
+					<li><kbd id='playpause'>Space</kbd>       play/pause</li>
+					<li><kbd id='previous'>Left arrow</kbd>  previous track</li>
+					<li><kbd id='next'>Right arrow</kbd> next track</li>
+					<li><kbd id='seekback'>Comma</kbd>       seek back</li>
+					<li><kbd id='seekforward'>Period</kbd>      seek forward</li>
+					<li><kbd>Seek Rate</kbd> <span id="seekrate">10s</span></li>
 				</ul>
 			</div>
 		</main>
+		<script src="hotkeys.js"></script>
 	</body>
 </html>

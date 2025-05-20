@@ -53,7 +53,10 @@
 
 			<ul>
 				<li>
-					<a href="welcome.html" target=_blank>welcome page</a>
+					<a href="#" id="optionspage">Options page</a>
+				</li>
+				<li>
+					<a href="welcome.html" target=_blank>Welcome page</a>
 				</li>
 				<li>
 					<a href="https://bcstreamer.bandcamp.com/album/5-year-anniversary-compilation" target="_blank">5 year anniversary compilation</a>
@@ -62,12 +65,14 @@
 
 			<h3>Hotkeys:</h3>
 			<ul id="hotkeys">
-				<li><kbd>Space</kbd>       play/pause</li>
-				<li><kbd>Left arrow</kbd>  previous track</li>
-				<li><kbd>Right arrow</kbd> next track</li>
-				<li><kbd>Comma</kbd>       seek -10s</li>
-				<li><kbd>Period</kbd>      seek +10s</li>
+				<li><kbd id='playpause'>Space</kbd>       play/pause</li>
+				<li><kbd id='previous'>Left arrow</kbd>  previous track</li>
+				<li><kbd id='next'>Right arrow</kbd> next track</li>
+				<li><kbd id='seekback'>Comma</kbd>       seek back</li>
+				<li><kbd id='seekforward'>Period</kbd>      seek forward</li>
+				<li><kbd>Seek Rate</kbd> <span id="seekrate">10s</span></li>
 			</ul>
 		</div>
+		<script src="hotkeys.js"></script>
 	</body>
 </html>

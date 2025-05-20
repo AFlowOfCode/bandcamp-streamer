@@ -32,11 +32,11 @@ let defaults = {
 gettingHotkeys.then(
   results => {
     // console.log('Setting hotkeys & seek length', results);
-    injectScript(chrome.runtime.getURL('contentScript.js'), 'body', results);
+    injectScript(chrome.runtime.getURL('init.js'), 'body', results);
   }, 
   error => {
     console.log(`Error retrieving hotkey remaps (if any) from storage: ${error}`);
-    injectScript(chrome.runtime.getURL('contentScript.js'), 'body', defaults);
+    injectScript(chrome.runtime.getURL('init.js'), 'body', defaults);
   }
 );
 
