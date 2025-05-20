@@ -19,6 +19,7 @@ Firefox: [https://addons.mozilla.org/en-US/firefox/addon/bandcamp-streamer/](htt
   * Spacebar play/pause, L/R arrow keys to skip to previous/next track in the playlist
   * Volume control
   * Seek buttons (+/- 10s) via click or comma & period keys
+  * Hotkey & seek rate remapping
       
 ### Feed page features 
   * Nonstop streaming from 2 separate playlists: fan activity or new releases
@@ -58,6 +59,18 @@ Firefox: [https://addons.mozilla.org/en-US/firefox/addon/bandcamp-streamer/](htt
 
   * https://www.paypal.me/aflowofcode
   * https://cash.app/$AFOC
+
+### Potential feature (wish)list
+  * Custom playlists with export/backup ability
+  * Search by tag (generate tag-based playlists)
+  * Generate playlists based on collection rarity (i.e. items that appear in <= 50 total collections, >= 1000, etc)
+  * Stats / collection analysis (tag/rarity percentages, etc, suggestions?) for both your & others' collections
+  * Enable streaming on the official Discover & Tag pages
+  * Your suggestion!
+
+  Many features are non-trivial to implement, so I'm considering adding a paid tier which unlocks advanced features such as those listed above. Almost nobody views browser extensions as something to be paid for, but it takes a lot of time and effort to work on them nonetheless. 
+
+  If you'd be willing to make a one-time donation, pay a low monthly subscription fee for special access, or even make a code contribution please let me know along with what feature you'd most like to see!
 
 ### Changelog
 

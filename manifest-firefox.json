@@ -1,8 +1,9 @@
 {
     "name": "Bandcamp Streamer",
-    "version": "1.6.1",
+    "version": "1.7.0",
     "description": "Continuously stream from Bandcamp feed, collection, & wishlist pages + other cool features.",
     "manifest_version": 2,
+    "permissions": ["storage"],
     "background": {
         "scripts": ["background.js"],
         "persistent": false
@@ -21,7 +22,7 @@
         }
     ],
     "web_accessible_resources": [
-      "contentScript.js",
+      "init.js",
       "modules/*.js"
     ],
     "icons": {
@@ -37,6 +38,14 @@
           "48": "images/icon48.png",
           "128": "images/icon128.png"
         },
-        "default_popup": "infobox.html"
+        "default_popup": "pages/infobox.html"
+    },
+    "options_ui": {
+        "page": "pages/options.html"
+    },
+    "browser_specific_settings": {
+        "gecko": {
+            "id": "{418b6db6-d5a3-495a-af2b-521ef875defd}"
+        }
     }
 }
