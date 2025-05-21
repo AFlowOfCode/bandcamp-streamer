@@ -74,6 +74,9 @@ Firefox: [https://addons.mozilla.org/en-US/firefox/addon/bandcamp-streamer/](htt
 
 ### Changelog
 
+##### 1.7.1
+  * Prevent welcome page from autofocusing
+
 ##### 1.7.0
   * Seek buttons for profile player
   * Hotkey list

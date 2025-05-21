@@ -6,7 +6,7 @@
  * @see    {@link http://stackoverflow.com/questions/20499994/access-window-variable-from-content-script}
  */
 
-console.log('Bandcamp Streamer! (v1.7.0)');
+console.log('Bandcamp Streamer! (v1.7.1)');
 
 function injectScript(file_path, tag, prefs) {
     const node = document.getElementsByTagName(tag)[0],
