@@ -1,4 +1,5 @@
 import { setQueueTitles, getItemKey, create_playlist_mods } from './profile.js';
+import { set_tab_title } from './shared.js';
 
 function clone_playlist(colplayer) {
   return colplayer.currentPlaylist === 'albums' ? colplayer.albumPlaylist.slice() : 
@@ -8,7 +9,13 @@ function clone_playlist(colplayer) {
          colplayer.wishPlaylist.slice();
 }
 
-export function addFunctions(colplayer) {
+export function addFunctions(colplayer, page='') {
+
+  if (page == 'album') {
+    // albumplayer, not actually colplayer (TODO: make param name generic)
+    colplayer._html5player._handlers.loaded.push(set_tab_title);
+    return;
+  }
   
   // reverse playlist
   colplayer.reverse = function() {

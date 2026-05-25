@@ -1,4 +1,4 @@
-import { countInArray, observeTotal, create_seekers } from './shared.js';
+import { countInArray, observeTotal, create_seekers, set_tab_title } from './shared.js';
 
 export function FeedPlaylist(bcplayer, originalPlaylist) {
     
@@ -218,15 +218,7 @@ export function initFeedPlaylist(FeedPlaylist) {
     return;
   }; // FeedPlaylist.prototype.onStateUpdate
 
-  FeedPlaylist.prototype.updateTitle = function() {
-    // make sure correct track has time to show up first
-    setTimeout(() => {
-      // console.log('updating tab title');
-      const trackTitle = document.querySelector('#track_play_waypoint .waypoint-item-title').textContent,
-            trackArtist = document.querySelector('#track_play_waypoint .waypoint-artist-title').textContent;
-      window.document.title = `${trackTitle} ${trackArtist} | ${window.originalTitle}`;
-    }, 100);
-  };
+  FeedPlaylist.prototype.updateTitle = () => set_tab_title('feed');
 
   // DOM
   FeedPlaylist.prototype.updatePosition = function() {

@@ -206,3 +206,23 @@ function seek(direction, player, seek_rate=10) {
   if (colplayer) colplayer.player2._playlist.seek(new_val);
   if (BCStreamer.albumplayer) player.seek(new_val);
 }
+
+export function set_tab_title(page='') {
+  // albumplayer doesn't pass in a param
+  const track_selector = page == 'feed' ? '#track_play_waypoint .waypoint-item-title' : '#trackInfoInner a.primaryText';
+
+  // make sure correct track has time to show up first
+  setTimeout(() => {
+    // console.log('updating tab title');
+    const trackTitle = document.querySelector(track_selector).textContent,
+          trackArtist = page == 'feed' ? document.querySelector('#track_play_waypoint .waypoint-artist-title').textContent : '';
+
+    if (page == 'feed') {
+      window.document.title = `${trackTitle} ${trackArtist} | ${window.originalTitle}`;
+    } else {
+      // release pages already use {album} | {artist} 
+      window.document.title = `${trackTitle} | ${window.originalTitle}`;
+    }
+    
+  }, 100);
+}

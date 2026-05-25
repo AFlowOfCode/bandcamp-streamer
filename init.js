@@ -46,6 +46,8 @@ import { loadCollection } from './modules/profile.js';
   // list all access keys & track titles in console
   // for (key in colplayer.tracklists.collection) {console.log(`${key}: ${colplayer.tracklists.collection[key][0].trackTitle}`);}
 
+  if (albumplayer) addFunctions(albumplayer, 'album');
+
   if (!bcplayer && colplayer) {
     // on collection page & need to modify some of that player's functions + add shuffle
     replaceFunctions(colplayer);
