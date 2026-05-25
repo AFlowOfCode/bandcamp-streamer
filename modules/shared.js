@@ -55,7 +55,7 @@ function add_key_listeners(prefs, {bcplayer, colplayer, albumplayer} = {}) {
           case prefs.seekback:
             seek('back', feedPlayer, prefs.seekrate);
             break;
-          case 'Period':
+          case prefs.seekforward:
             seek('forward', feedPlayer, prefs.seekrate);
             break;
         }
@@ -75,7 +75,7 @@ function add_key_listeners(prefs, {bcplayer, colplayer, albumplayer} = {}) {
           case prefs.seekback:
             seek('back', colplayer, prefs.seekrate);
             break;
-          case 'Period':
+          case prefs.seekforward:
             seek('forward', colplayer, prefs.seekrate);
             break;
         }
@@ -90,6 +90,12 @@ function add_key_listeners(prefs, {bcplayer, colplayer, albumplayer} = {}) {
             break;
           case prefs.next:
             document.querySelector('.nextbutton').click();
+            break;
+          case prefs.seekback:
+            seek('back', albumplayer, prefs.seekrate);
+            break;
+          case prefs.seekforward:
+            seek('forward', albumplayer, prefs.seekrate);
             break;
         }
       }
@@ -185,7 +191,12 @@ export function create_seekers(container, player, seek_rate) {
 }
 
 function seek(direction, player, seek_rate=10) {
-  const position = bcplayer ? player._position : player.player2._playlist._position,
+  const position = bcplayer ? player._position : 
+                   /* instead of just having a position val, this player has an array of "recent" positions
+                      & only the last entry is reliably the current one */
+                   BCStreamer.albumplayer ? player._html5player._recentpos[player._html5player._recentpos.length - 1] : 
+                   // collection player
+                   player.player2._playlist._position,
         new_val = direction == 'forward' ? position + +seek_rate : position - +seek_rate;
 
   // console.log('SEEKING:', seek_rate, position, new_val);
@@ -193,4 +204,5 @@ function seek(direction, player, seek_rate=10) {
   // jumps to the second passed in, skips to next track if at end
   if (bcplayer) bcplayer._playlist._player.seek(new_val);
   if (colplayer) colplayer.player2._playlist.seek(new_val);
+  if (BCStreamer.albumplayer) player.seek(new_val);
 }

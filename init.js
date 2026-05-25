@@ -31,6 +31,7 @@ import { loadCollection } from './modules/profile.js';
   window.bcplayer = bcplayer;
   window.colplayer = colplayer;
   window.pagedata = pagedata;
+  window.BCStreamer = {albumplayer};
   // record original document title for updating with track/artist
   window.originalTitle = window.document.title;
 
