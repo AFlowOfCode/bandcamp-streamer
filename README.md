@@ -74,6 +74,11 @@ Firefox: [https://addons.mozilla.org/en-US/firefox/addon/bandcamp-streamer/](htt
 
 ### Changelog
 
+##### 1.8.0
+  * Add song name to tab title on release pages
+  * Add hotkey seek functionality to release pages
+  * Fix forward seek not respecting user hotkey setting
+
 ##### 1.7.1
   * Prevent welcome page from autofocusing
 
