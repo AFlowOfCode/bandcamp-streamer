@@ -221,8 +221,15 @@ export function set_tab_title(page='') {
       window.document.title = `${trackTitle} ${trackArtist} | ${window.originalTitle}`;
     } else {
       // release pages already use {album} | {artist} 
-      window.document.title = `${trackTitle} | ${window.originalTitle}`;
+      // a ▶︎ is added/removed automatically by BC on play/pause
+      if (trackTitle) {
+        if (document.title.indexOf('▶︎') > -1) {
+          window.document.title = `${document.title.slice(0,2)} ${trackTitle} | ${window.originalTitle}`;
+        } else {
+          window.document.title = `${trackTitle} | ${window.originalTitle}`;
+        }
+      }
     }
     
-  }, 100);
+  }, 250);
 }
