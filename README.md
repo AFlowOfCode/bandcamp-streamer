@@ -57,11 +57,11 @@ Firefox: [https://addons.mozilla.org/en-US/firefox/addon/bandcamp-streamer/](htt
 
   * Any donation is appreciated! Much like making music, writing browser extensions is often a labor of love with little to no financial benefits in return for a lot of heart and effort.
 
+  * https://ko-fi.com/aflowofcode
   * https://www.paypal.me/aflowofcode
-  * https://cash.app/$AFOC
 
 ### Potential feature (wish)list
-  * Custom playlists with export/backup ability
+  * Custom (desktop-managed) playlists with export/backup ability
   * Search by tag (generate tag-based playlists)
   * Generate playlists based on collection rarity (i.e. items that appear in <= 50 total collections, >= 1000, etc)
   * Stats / collection analysis (tag/rarity percentages, etc, suggestions?) for both your & others' collections
@@ -73,6 +73,9 @@ Firefox: [https://addons.mozilla.org/en-US/firefox/addon/bandcamp-streamer/](htt
   If you'd be willing to make a one-time donation, pay a low monthly subscription fee for special access, or even make a code contribution please let me know along with what feature you'd most like to see!
 
 ### Changelog
+
+##### 1.8.1
+  * Refine release/track page tab title handling
 
 ##### 1.8.0
   * Add song name to tab title on release pages
